@@ -27,16 +27,10 @@ public enum BookingDuration {
         return Duration.ofMinutes(minutes);
     }
 
-    /**
-     * Convenience – adds this duration to any LocalDateTime.
-     */
     public LocalDateTime addTo(LocalDateTime start) {
         return start.plus(toDuration());
     }
 
-    /**
-     * Parse from minutes read from DB.
-     */
     public static BookingDuration fromMinutes(int m) {
         for (BookingDuration d : values()) if (d.minutes == m) return d;
         throw new IllegalArgumentException("Unsupported duration " + m + " min");

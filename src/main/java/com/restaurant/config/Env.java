@@ -3,7 +3,6 @@ package com.restaurant.config;
 import io.github.cdimascio.dotenv.Dotenv;
 
 public final class Env {
-
     private static volatile Env INSTANCE;
     private final Dotenv dotenv;
 

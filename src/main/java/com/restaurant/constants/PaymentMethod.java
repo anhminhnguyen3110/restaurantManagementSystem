@@ -1,28 +1,29 @@
 package com.restaurant.constants;
 
-public enum PaymentStatus {
-    PENDING("Pending"),
-    COMPLETED("Completed"),
-    FAILED("Failed");
+public enum PaymentMethod {
+    CASH("Cash"),
+    CREDIT_CARD("Credit_Card"),
+    DIRECT_BANK_TRANSFER("Direct_Bank_Transfer"),
+    EWALLET("E_Wallet");
 
-    private final String status;
+    private final String method;
 
-    PaymentStatus(String status) {
-        this.status = status;
+    PaymentMethod(String method) {
+        this.method = method;
     }
 
-    public String getStatus() {
-        return status;
+    public String getMethod() {
+        return method;
     }
 
     @Override
     public String toString() {
-        return status;
+        return method;
     }
 
-    public static PaymentStatus fromString(String status) {
-        for (PaymentStatus paymentStatus : PaymentStatus.values()) {
-            if (paymentStatus.status.equalsIgnoreCase(status)) {
+    public static PaymentMethod fromString(String status) {
+        for (PaymentMethod paymentStatus : PaymentMethod.values()) {
+            if (paymentStatus.method.equalsIgnoreCase(status)) {
                 return paymentStatus;
             }
         }

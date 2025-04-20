@@ -1,14 +1,12 @@
-package com.restaurant;
+package com.restaurant.menu;
 
 import com.restaurant.daos.impl.MenuDAOImpl;
 import com.restaurant.models.Menu;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.TypedQuery;
+import jakarta.persistence.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -37,12 +35,13 @@ class MenuDAOImplTest {
     private MenuDAOImpl dao;
 
     private final String findAllJpql = "SELECT m FROM Menu m";
-    private final String findByRestaurantJpql = "SELECT m FROM Menu m WHERE m.restaurant.id = :rid";
+    private final String findByRestJpql =
+            "SELECT m FROM Menu m WHERE m.restaurant.id = :rid";
 
     @BeforeEach
     void setUp() {
-        when(emf.createEntityManager()).thenReturn(em);
-        when(em.getTransaction()).thenReturn(tx);
+        lenient().when(emf.createEntityManager()).thenReturn(em);
+        lenient().when(em.getTransaction()).thenReturn(tx);
     }
 
     @Test
@@ -50,20 +49,24 @@ class MenuDAOImplTest {
         Menu menu = new Menu();
         dao.add(menu);
 
-        verify(emf).createEntityManager();
-        verify(em).getTransaction();
-        verify(tx).begin();
-        verify(em).persist(menu);
-        verify(tx).commit();
-        verify(em).close();
+        InOrder inOrder = inOrder(emf, em, tx);
+        inOrder.verify(emf).createEntityManager();
+        inOrder.verify(em).getTransaction();
+        inOrder.verify(tx).begin();
+        inOrder.verify(em).persist(menu);
+        inOrder.verify(tx).commit();
+        verify(tx, never()).rollback();
+        inOrder.verify(em).close();
     }
 
     @Test
-    void add_whenException_shouldRollbackAndClose() {
+    void add_whenPersistThrows_shouldRollbackAndClose() {
         Menu menu = new Menu();
-        doThrow(new RuntimeException("fail")).when(em).persist(menu);
+        doThrow(new RuntimeException("persist fail")).when(em).persist(menu);
+        when(tx.isActive()).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> dao.add(menu));
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> dao.add(menu));
+        assertEquals("persist fail", ex.getMessage());
 
         verify(tx).begin();
         verify(em).persist(menu);
@@ -85,7 +88,7 @@ class MenuDAOImplTest {
     }
 
     @Test
-    void findAll_shouldReturnListAndClose() {
+    void findAll_shouldQueryReturnListAndClose() {
         List<Menu> list = List.of(new Menu(), new Menu());
         when(em.createQuery(findAllJpql, Menu.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -100,18 +103,18 @@ class MenuDAOImplTest {
     }
 
     @Test
-    void findByRestaurant_shouldReturnListAndClose() {
-        List<Menu> list = List.of(new Menu());
-        when(em.createQuery(findByRestaurantJpql, Menu.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("rid", 7)).thenReturn(typedQuery);
+    void findByRestaurant_shouldQueryReturnListAndClose() {
+        List<Menu> list = List.of(new Menu(), new Menu(), new Menu());
+        when(em.createQuery(findByRestJpql, Menu.class)).thenReturn(typedQuery);
+        when(typedQuery.setParameter("rid", 42)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<Menu> result = dao.findByRestaurant(7);
+        List<Menu> result = dao.findByRestaurant(42);
 
         assertEquals(list, result);
         verify(emf).createEntityManager();
-        verify(em).createQuery(findByRestaurantJpql, Menu.class);
-        verify(typedQuery).setParameter("rid", 7);
+        verify(em).createQuery(findByRestJpql, Menu.class);
+        verify(typedQuery).setParameter("rid", 42);
         verify(typedQuery).getResultList();
         verify(em).close();
     }
@@ -121,42 +124,62 @@ class MenuDAOImplTest {
         Menu menu = new Menu();
         dao.update(menu);
 
-        verify(emf).createEntityManager();
-        verify(em).getTransaction();
+        InOrder inOrder = inOrder(emf, em, tx);
+        inOrder.verify(emf).createEntityManager();
+        inOrder.verify(em).getTransaction();
+        inOrder.verify(tx).begin();
+        inOrder.verify(em).merge(menu);
+        inOrder.verify(tx).commit();
+        verify(tx, never()).rollback();
+        inOrder.verify(em).close();
+    }
+
+    @Test
+    void update_whenMergeThrows_shouldRollbackAndClose() {
+        Menu menu = new Menu();
+        doThrow(new PersistenceException("merge fail")).when(em).merge(menu);
+        when(tx.isActive()).thenReturn(true);
+
+        PersistenceException ex = assertThrows(PersistenceException.class, () -> dao.update(menu));
+        assertEquals("merge fail", ex.getMessage());
+
         verify(tx).begin();
         verify(em).merge(menu);
-        verify(tx).commit();
+        verify(tx).rollback();
         verify(em).close();
     }
 
     @Test
-    void delete_shouldRemoveWhenFoundCommitAndClose() {
+    void delete_shouldRemoveWhenFound_commitAndClose() {
         Menu menu = new Menu();
-        when(em.find(Menu.class, 3)).thenReturn(menu);
+        when(em.find(Menu.class, 99)).thenReturn(menu);
 
-        dao.delete(3);
+        dao.delete(99);
 
-        verify(emf).createEntityManager();
-        verify(em).getTransaction();
-        verify(tx).begin();
-        verify(em).find(Menu.class, 3);
-        verify(em).remove(menu);
-        verify(tx).commit();
-        verify(em).close();
+        InOrder inOrder = inOrder(emf, em, tx);
+        inOrder.verify(emf).createEntityManager();
+        inOrder.verify(em).getTransaction();
+        inOrder.verify(tx).begin();
+        inOrder.verify(em).find(Menu.class, 99);
+        inOrder.verify(em).remove(menu);
+        inOrder.verify(tx).commit();
+        verify(tx, never()).rollback();
+        inOrder.verify(em).close();
     }
 
     @Test
-    void delete_shouldNotRemoveWhenNotFoundButStillCommitAndClose() {
-        when(em.find(Menu.class, 4)).thenReturn(null);
+    void delete_shouldNotRemoveWhenNotFound_butStillCommitAndClose() {
+        when(em.find(Menu.class, 100)).thenReturn(null);
 
-        dao.delete(4);
+        dao.delete(100);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).find(Menu.class, 4);
+        verify(em).find(Menu.class, 100);
         verify(em, never()).remove(any());
         verify(tx).commit();
+        verify(tx, never()).rollback();
         verify(em).close();
     }
 }

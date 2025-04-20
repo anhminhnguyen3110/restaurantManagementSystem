@@ -1,4 +1,8 @@
 package com.restaurant.di;
 
-public class Inject {
+import java.lang.annotation.*;
+
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Inject {
 }

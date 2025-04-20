@@ -5,19 +5,18 @@ import com.restaurant.models.Booking;
 import java.time.LocalDateTime;
 import java.util.List;
 
-
 public interface BookingDAO {
-    void addBooking(Booking booking);
+    void add(Booking booking);
 
-    Booking getBookingByPhone(String phone);
+    Booking getById(int id);
 
-    Booking getBookingById(int id);
+    List<Booking> findAll();
 
-    List<Booking> getAllBookings();
+    List<Booking> findByCustomerPhone(String phone);
 
-    List<Booking> getBookingsInRange(LocalDateTime from, LocalDateTime to);
+    List<Booking> findInRange(LocalDateTime from, LocalDateTime to);
 
-    void updateBooking(Booking booking);
+    void update(Booking booking);
 
-    void deleteBooking(int id);
+    void delete(int id);
 }

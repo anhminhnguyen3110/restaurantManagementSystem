@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<hibernate-configuration>
+    <session-factory>
+        <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+        <property name="hibernate.connection.url">
+            jdbc:mysql://localhost:3306/restaurant_db?useSSL=false&amp;serverTimezone=UTC
+        </property>
+        <property name="hibernate.connection.username">root</property>
+        <property name="hibernate.connection.password">123456</property>
+
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+
+        <property name="hibernate.hbm2ddl.auto">update</property>
+        <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.format_sql">true</property>
+
+        <mapping class="com.restaurant.models.Booking"/>
+        <mapping class="com.restaurant.models.Customer" />
+        <mapping class="com.restaurant.models.Menu" />
+        <mapping class="com.restaurant.models.MenuItem"/>
+        <mapping class="com.restaurant.models.MenuItemIngredient" />
+        <mapping class="com.restaurant.models.Order"/>
+        <mapping class="com.restaurant.models.OrderItem" />
+        <mapping class="com.restaurant.models.Payment"/>
+        <mapping class="com.restaurant.models.Restaurant" />
+        <mapping class="com.restaurant.models.RestaurantTable"/>
+        <mapping class="com.restaurant.models.Shipment" />
+        <mapping class="com.restaurant.models.Stock" />
+        <mapping class="com.restaurant.models.Supplier" />
+        <mapping class="com.restaurant.models.User" />
+    </session-factory>
+</hibernate-configuration>

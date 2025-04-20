@@ -5,13 +5,17 @@ import com.restaurant.models.MenuItem;
 import java.util.List;
 
 public interface MenuItemDAO {
-    void addMenuItem(MenuItem item);
+    void add(MenuItem item);
 
-    MenuItem getMenuItemById(int id);
+    MenuItem getById(int id);
 
-    List<MenuItem> getAllMenuItems();
+    List<MenuItem> findAll();
 
-    void updateMenuItem(MenuItem item);
+    MenuItem findByName(String name);
 
-    void deleteMenuItem(int id);
+    List<MenuItem> findByMenu(int menuId);
+
+    void update(MenuItem item);
+
+    void delete(int id);
 }

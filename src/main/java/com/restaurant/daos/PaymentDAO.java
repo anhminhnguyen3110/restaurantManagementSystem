@@ -1,17 +1,25 @@
 package com.restaurant.daos;
 
 import com.restaurant.models.Payment;
+import com.restaurant.constants.PaymentMethod;
+import com.restaurant.constants.PaymentStatus;
 
 import java.util.List;
 
 public interface PaymentDAO {
-    void addPayment(Payment p);
+    void add(Payment payment);
 
-    Payment getPaymentById(int id);
+    Payment getById(int id);
 
-    List<Payment> getPaymentsByOrder(int orderId);
+    List<Payment> findAll();
 
-    void updatePaymentStatus(int id, String status);
+    Payment findByOrderId(int orderId);
 
-    void deletePayment(int id);
+    List<Payment> findByStatus(PaymentStatus status);
+
+    List<Payment> findByMethod(PaymentMethod method);
+
+    void update(Payment payment);
+
+    void delete(int id);
 }

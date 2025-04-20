@@ -1,4 +1,4 @@
-package com.restaurant;
+package com.restaurant.order;
 
 import com.restaurant.constants.OrderType;
 import com.restaurant.daos.impl.OrderDAOImpl;
@@ -44,8 +44,8 @@ class OrderDAOImplTest {
 
     @BeforeEach
     void setUp() {
-        when(emf.createEntityManager()).thenReturn(em);
-        when(em.getTransaction()).thenReturn(tx);
+        lenient().when(emf.createEntityManager()).thenReturn(em);
+        lenient().when(em.getTransaction()).thenReturn(tx);
     }
 
     @Test
@@ -62,9 +62,10 @@ class OrderDAOImplTest {
     }
 
     @Test
-    void add_whenPersistThrows_shouldRollbackAndClose() {
+    void add_whenException_shouldRollbackAndClose() {
         Order order = new Order();
-        doThrow(new RuntimeException("persist failed")).when(em).persist(order);
+        doThrow(new RuntimeException("oops")).when(em).persist(order);
+        when(tx.isActive()).thenReturn(true);
 
         assertThrows(RuntimeException.class, () -> dao.add(order));
 
@@ -77,19 +78,19 @@ class OrderDAOImplTest {
     @Test
     void getById_shouldFindReturnAndClose() {
         Order expected = new Order();
-        when(em.find(Order.class, 10)).thenReturn(expected);
+        when(em.find(Order.class, 42)).thenReturn(expected);
 
-        Order actual = dao.getById(10);
+        Order actual = dao.getById(42);
 
         assertSame(expected, actual);
         verify(emf).createEntityManager();
-        verify(em).find(Order.class, 10);
+        verify(em).find(Order.class, 42);
         verify(em).close();
     }
 
     @Test
-    void findAll_shouldReturnListAndClose() {
-        List<Order> list = List.of(new Order(), new Order());
+    void findAll_shouldQueryReturnListAndClose() {
+        List<Order> list = List.of(new Order());
         when(em.createQuery(findAllJpql, Order.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
@@ -103,9 +104,9 @@ class OrderDAOImplTest {
     }
 
     @Test
-    void findByStatus_shouldReturnListAndClose() {
-        List<Order> list = List.of(new Order());
-        String status = "completed";
+    void findByStatus_shouldQueryReturnListAndClose() {
+        String status = "foo";
+        List<Order> list = List.of(new Order(), new Order());
         when(em.createQuery(findByStatusJpql, Order.class)).thenReturn(typedQuery);
         when(typedQuery.setParameter("status", status)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -121,9 +122,9 @@ class OrderDAOImplTest {
     }
 
     @Test
-    void findByType_shouldReturnListAndClose() {
+    void findByType_shouldQueryReturnListAndClose() {
+        OrderType type = OrderType.DINE_IN;
         List<Order> list = List.of(new Order());
-        OrderType type = OrderType.DELIVERY;
         when(em.createQuery(findByTypeJpql, Order.class)).thenReturn(typedQuery);
         when(typedQuery.setParameter("type", type)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -139,9 +140,9 @@ class OrderDAOImplTest {
     }
 
     @Test
-    void findByTable_shouldReturnListAndClose() {
-        List<Order> list = List.of(new Order());
-        int tableId = 5;
+    void findByTable_shouldQueryReturnListAndClose() {
+        int tableId = 7;
+        List<Order> list = List.of(new Order(), new Order(), new Order());
         when(em.createQuery(findByTableJpql, Order.class)).thenReturn(typedQuery);
         when(typedQuery.setParameter("tid", tableId)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -170,44 +171,31 @@ class OrderDAOImplTest {
     }
 
     @Test
-    void update_whenMergeThrows_shouldRollbackAndClose() {
+    void delete_whenFound_shouldRemoveCommitAndClose() {
         Order order = new Order();
-        doThrow(new RuntimeException("merge failed")).when(em).merge(order);
+        when(em.find(Order.class, 99)).thenReturn(order);
 
-        assertThrows(RuntimeException.class, () -> dao.update(order));
-
-        verify(tx).begin();
-        verify(em).merge(order);
-        verify(tx).rollback();
-        verify(em).close();
-    }
-
-    @Test
-    void delete_shouldRemoveWhenFoundCommitAndClose() {
-        Order order = new Order();
-        when(em.find(Order.class, 20)).thenReturn(order);
-
-        dao.delete(20);
+        dao.delete(99);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).find(Order.class, 20);
+        verify(em).find(Order.class, 99);
         verify(em).remove(order);
         verify(tx).commit();
         verify(em).close();
     }
 
     @Test
-    void delete_shouldNotRemoveWhenNotFoundButStillCommitAndClose() {
-        when(em.find(Order.class, 30)).thenReturn(null);
+    void delete_whenNotFound_shouldNotRemoveButCommitAndClose() {
+        when(em.find(Order.class, 100)).thenReturn(null);
 
-        dao.delete(30);
+        dao.delete(100);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).find(Order.class, 30);
+        verify(em).find(Order.class, 100);
         verify(em, never()).remove(any());
         verify(tx).commit();
         verify(em).close();

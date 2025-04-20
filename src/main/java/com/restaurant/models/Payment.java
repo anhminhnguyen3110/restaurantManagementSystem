@@ -1,72 +1,76 @@
 package com.restaurant.models;
 
+import com.restaurant.constants.PaymentMethod;
+import com.restaurant.constants.PaymentStatus;
+import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
-public class Payment {
-    private int id;
-    private int orderId;
+@Entity
+@Table(name = "payments")
+public class Payment extends BaseModel {
+    @OneToOne
+    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    private Order order;
+
     private double amount;
-    private String method;  // CASH, CARD, POS, etc.
-    private String status;  // PENDING, PAID, FAILED
-    private LocalDateTime timestamp;
+
+    @Column(length = 10)
+    private PaymentMethod method;
+
+    @Column(length = 10)
+    private PaymentStatus status;
+
+    @Column(name = "ts", columnDefinition = "TIMESTAMP")
+    private LocalDateTime timestamp = LocalDateTime.now();
 
     public Payment() {
     }
 
-    public Payment(int id, int orderId, double amount, String method, String status, LocalDateTime ts) {
-        this.id = id;
-        this.orderId = orderId;
+    public Payment(Order order, double amount, PaymentMethod method, PaymentStatus status) {
+        this.order = order;
         this.amount = amount;
         this.method = method;
         this.status = status;
-        this.timestamp = ts;
     }
 
-    public int getId() {
-        return id;
+    public Order getOrder() {
+        return order;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public int getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(int orderId) {
-        this.orderId = orderId;
+    public void setOrder(Order o) {
+        this.order = o;
     }
 
     public double getAmount() {
         return amount;
     }
 
-    public void setAmount(double amount) {
-        this.amount = amount;
+    public void setAmount(double a) {
+        this.amount = a;
     }
 
-    public String getMethod() {
+    public PaymentMethod getMethod() {
         return method;
     }
 
-    public void setMethod(String method) {
-        this.method = method;
+    public void setMethod(String m) {
+        this.method = PaymentMethod.fromString(m);
     }
 
-    public String getStatus() {
+    public PaymentStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setStatus(String s) {
+        this.status = PaymentStatus.fromString(s);
     }
 
     public LocalDateTime getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
+    public void setTimestamp(LocalDateTime t) {
+        this.timestamp = t;
     }
 }

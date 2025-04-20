@@ -1,14 +1,16 @@
 package com.restaurant.models;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "stocks")
 public class Stock extends BaseModel {
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "menu_item_id", nullable = false, unique = true)
-    private MenuItem menuItem;
+    @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<MenuItemIngredient> usedIn = new ArrayList<>();
 
     @Column(nullable = false)
     private int quantity;
@@ -16,24 +18,20 @@ public class Stock extends BaseModel {
     @Column(name = "min_threshold", nullable = false)
     private int minThreshold = 0;
 
-    @Column(name = "last_updated", columnDefinition = "TIMESTAMP")
-    private LocalDateTime lastUpdated;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id", nullable = false)
+    private Supplier supplier;
 
-    public Stock() {}
+    public Stock() {
+    }
 
-    public Stock(MenuItem menuItem, int quantity, int minThreshold) {
-        this.menuItem = menuItem;
+    public Stock(int quantity, int minThreshold) {
         this.quantity = quantity;
         this.minThreshold = minThreshold;
-        this.lastUpdated = LocalDateTime.now();
     }
 
-    public MenuItem getMenuItem() {
-        return menuItem;
-    }
-
-    public void setMenuItem(MenuItem menuItem) {
-        this.menuItem = menuItem;
+    public List<MenuItemIngredient> getUsedIn() {
+        return usedIn;
     }
 
     public int getQuantity() {
@@ -62,5 +60,9 @@ public class Stock extends BaseModel {
 
     public void decrease(int amount) {
         this.quantity = Math.max(0, this.quantity - amount);
+    }
+
+    public void setUsedIn(List<MenuItemIngredient> usedIn) {
+        this.usedIn = usedIn;
     }
 }

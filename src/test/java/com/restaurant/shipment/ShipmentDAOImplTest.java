@@ -1,4 +1,4 @@
-package com.restaurant;
+package com.restaurant.shipment;
 
 import com.restaurant.constants.ShipmentService;
 import com.restaurant.constants.ShipmentStatus;
@@ -50,32 +50,33 @@ class ShipmentDAOImplTest {
 
     @BeforeEach
     void setUp() {
-        when(emf.createEntityManager()).thenReturn(em);
-        when(em.getTransaction()).thenReturn(tx);
+        lenient().when(emf.createEntityManager()).thenReturn(em);
+        lenient().when(em.getTransaction()).thenReturn(tx);
     }
 
     @Test
     void add_shouldPersistCommitAndClose() {
-        Shipment shipment = new Shipment();
-        dao.add(shipment);
+        Shipment s = new Shipment();
+        dao.add(s);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).persist(shipment);
+        verify(em).persist(s);
         verify(tx).commit();
         verify(em).close();
     }
 
     @Test
-    void add_whenException_shouldRollbackAndClose() {
-        Shipment shipment = new Shipment();
-        doThrow(new RuntimeException("persist failed")).when(em).persist(shipment);
+    void add_whenPersistThrows_shouldRollbackAndClose() {
+        Shipment s = new Shipment();
+        doThrow(new RuntimeException("fail")).when(em).persist(s);
+        when(tx.isActive()).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> dao.add(shipment));
+        assertThrows(RuntimeException.class, () -> dao.add(s));
 
         verify(tx).begin();
-        verify(em).persist(shipment);
+        verify(em).persist(s);
         verify(tx).rollback();
         verify(em).close();
     }
@@ -83,18 +84,18 @@ class ShipmentDAOImplTest {
     @Test
     void getById_shouldFindReturnAndClose() {
         Shipment expected = new Shipment();
-        when(em.find(Shipment.class, 42)).thenReturn(expected);
+        when(em.find(Shipment.class, 123)).thenReturn(expected);
 
-        Shipment actual = dao.getById(42);
+        Shipment actual = dao.getById(123);
 
         assertSame(expected, actual);
         verify(emf).createEntityManager();
-        verify(em).find(Shipment.class, 42);
+        verify(em).find(Shipment.class, 123);
         verify(em).close();
     }
 
     @Test
-    void findAll_shouldReturnListAndClose() {
+    void findAll_shouldQueryReturnListAndClose() {
         List<Shipment> list = List.of(new Shipment(), new Shipment());
         when(em.createQuery(findAllJpql, Shipment.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -109,9 +110,9 @@ class ShipmentDAOImplTest {
     }
 
     @Test
-    void findByStatus_shouldReturnListAndClose() {
+    void findByStatus_shouldQueryReturnListAndClose() {
+        ShipmentStatus status = ShipmentStatus.SUCCESS;
         List<Shipment> list = List.of(new Shipment());
-        ShipmentStatus status = ShipmentStatus.SHIPPING;
         when(em.createQuery(findByStatusJpql, Shipment.class)).thenReturn(typedQuery);
         when(typedQuery.setParameter("status", status)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -119,7 +120,6 @@ class ShipmentDAOImplTest {
         List<Shipment> result = dao.findByStatus(status);
 
         assertEquals(list, result);
-        verify(emf).createEntityManager();
         verify(em).createQuery(findByStatusJpql, Shipment.class);
         verify(typedQuery).setParameter("status", status);
         verify(typedQuery).getResultList();
@@ -127,27 +127,26 @@ class ShipmentDAOImplTest {
     }
 
     @Test
-    void findByServiceType_shouldReturnListAndClose() {
-        List<Shipment> list = List.of(new Shipment());
-        ShipmentService service = ShipmentService.GRAB;
+    void findByServiceType_shouldQueryReturnListAndClose() {
+        ShipmentService svc = ShipmentService.DIDI;
+        List<Shipment> list = List.of();
         when(em.createQuery(findByServiceTypeJpql, Shipment.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("serviceType", service)).thenReturn(typedQuery);
+        when(typedQuery.setParameter("serviceType", svc)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<Shipment> result = dao.findByServiceType(service);
+        List<Shipment> result = dao.findByServiceType(svc);
 
         assertEquals(list, result);
-        verify(emf).createEntityManager();
         verify(em).createQuery(findByServiceTypeJpql, Shipment.class);
-        verify(typedQuery).setParameter("serviceType", service);
+        verify(typedQuery).setParameter("serviceType", svc);
         verify(typedQuery).getResultList();
         verify(em).close();
     }
 
     @Test
-    void findByOrder_shouldReturnListAndClose() {
-        List<Shipment> list = List.of(new Shipment());
+    void findByOrder_shouldQueryReturnListAndClose() {
         Order order = new Order();
+        List<Shipment> list = List.of(new Shipment(), new Shipment());
         when(em.createQuery(findByOrderJpql, Shipment.class)).thenReturn(typedQuery);
         when(typedQuery.setParameter("orderParam", order)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -155,7 +154,6 @@ class ShipmentDAOImplTest {
         List<Shipment> result = dao.findByOrder(order);
 
         assertEquals(list, result);
-        verify(emf).createEntityManager();
         verify(em).createQuery(findByOrderJpql, Shipment.class);
         verify(typedQuery).setParameter("orderParam", order);
         verify(typedQuery).getResultList();
@@ -163,9 +161,9 @@ class ShipmentDAOImplTest {
     }
 
     @Test
-    void findByShipper_shouldReturnListAndClose() {
-        List<Shipment> list = List.of(new Shipment());
+    void findByShipper_shouldQueryReturnListAndClose() {
         User shipper = new User();
+        List<Shipment> list = List.of(new Shipment());
         when(em.createQuery(findByShipperJpql, Shipment.class)).thenReturn(typedQuery);
         when(typedQuery.setParameter("shipper", shipper)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -173,7 +171,6 @@ class ShipmentDAOImplTest {
         List<Shipment> result = dao.findByShipper(shipper);
 
         assertEquals(list, result);
-        verify(emf).createEntityManager();
         verify(em).createQuery(findByShipperJpql, Shipment.class);
         verify(typedQuery).setParameter("shipper", shipper);
         verify(typedQuery).getResultList();
@@ -181,64 +178,93 @@ class ShipmentDAOImplTest {
     }
 
     @Test
-    void findByCustomer_shouldReturnListAndClose() {
-        List<Shipment> list = List.of(new Shipment());
-        Customer customer = new Customer();
+    void findByCustomer_shouldQueryReturnListAndClose() {
+        Customer cust = new Customer();
+        List<Shipment> list = List.of();
         when(em.createQuery(findByCustomerJpql, Shipment.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("customer", customer)).thenReturn(typedQuery);
+        when(typedQuery.setParameter("customer", cust)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<Shipment> result = dao.findByCustomer(customer);
+        List<Shipment> result = dao.findByCustomer(cust);
 
         assertEquals(list, result);
-        verify(emf).createEntityManager();
         verify(em).createQuery(findByCustomerJpql, Shipment.class);
-        verify(typedQuery).setParameter("customer", customer);
+        verify(typedQuery).setParameter("customer", cust);
         verify(typedQuery).getResultList();
         verify(em).close();
     }
 
     @Test
     void update_shouldMergeCommitAndClose() {
-        Shipment shipment = new Shipment();
-        dao.update(shipment);
+        Shipment s = new Shipment();
+        dao.update(s);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).merge(shipment);
+        verify(em).merge(s);
         verify(tx).commit();
         verify(em).close();
     }
 
     @Test
-    void delete_shouldRemoveWhenFoundCommitAndClose() {
-        Shipment shipment = new Shipment();
-        when(em.find(Shipment.class, 99)).thenReturn(shipment);
+    void update_whenMergeThrows_shouldRollbackAndClose() {
+        Shipment s = new Shipment();
+        doThrow(new RuntimeException("bad")).when(em).merge(s);
+        when(tx.isActive()).thenReturn(true);
 
-        dao.delete(99);
+        assertThrows(RuntimeException.class, () -> dao.update(s));
+
+        verify(tx).begin();
+        verify(em).merge(s);
+        verify(tx).rollback();
+        verify(em).close();
+    }
+
+    @Test
+    void delete_shouldRemoveWhenFoundCommitAndClose() {
+        int id = 77;
+        Shipment s = new Shipment();
+        when(em.find(Shipment.class, id)).thenReturn(s);
+
+        dao.delete(id);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).find(Shipment.class, 99);
-        verify(em).remove(shipment);
+        verify(em).find(Shipment.class, id);
+        verify(em).remove(s);
         verify(tx).commit();
         verify(em).close();
     }
 
     @Test
     void delete_shouldNotRemoveWhenNotFoundButStillCommitAndClose() {
-        when(em.find(Shipment.class, 100)).thenReturn(null);
+        int id = 88;
+        when(em.find(Shipment.class, id)).thenReturn(null);
 
-        dao.delete(100);
+        dao.delete(id);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).find(Shipment.class, 100);
+        verify(em).find(Shipment.class, id);
         verify(em, never()).remove(any());
         verify(tx).commit();
+        verify(em).close();
+    }
+
+    @Test
+    void delete_whenFindThrows_shouldRollbackAndClose() {
+        int id = 99;
+        doThrow(new RuntimeException("oops")).when(em).find(Shipment.class, id);
+        when(tx.isActive()).thenReturn(true);
+
+        assertThrows(RuntimeException.class, () -> dao.delete(id));
+
+        verify(tx).begin();
+        verify(em).find(Shipment.class, id);
+        verify(tx).rollback();
         verify(em).close();
     }
 }

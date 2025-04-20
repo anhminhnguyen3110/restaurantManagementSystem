@@ -1,19 +1,24 @@
 package com.restaurant.daos;
 
 import com.restaurant.models.Order;
+import com.restaurant.constants.OrderType;
 
 import java.util.List;
 
 public interface OrderDAO {
-    void addOrder(Order order);
+    void add(Order order);
 
-    Order getOrderById(int id);
+    Order getById(int id);
 
-    List<Order> getOrdersByBookingId(int bookingId);
+    List<Order> findAll();
 
-    List<Order> getAllOrders();
+    List<Order> findByStatus(String status);
 
-    void updateOrderStatus(int orderId, String status);
+    List<Order> findByType(OrderType type);
 
-    void deleteOrder(int id);
+    List<Order> findByTable(int tableId);
+
+    void update(Order order);
+
+    void delete(int id);
 }

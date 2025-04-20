@@ -1,8 +1,12 @@
-package com.restaurant;
+package com.restaurant.booking;
 
 import com.restaurant.daos.impl.BookingDAOImpl;
 import com.restaurant.models.Booking;
-import jakarta.persistence.*;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.Query;
+import jakarta.persistence.TypedQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,8 +60,8 @@ class BookingDAOImplTest {
 
     @BeforeEach
     void setUp() {
-        when(emf.createEntityManager()).thenReturn(em);
-        when(em.getTransaction()).thenReturn(tx);
+        lenient().when(emf.createEntityManager()).thenReturn(em);
+        lenient().when(em.getTransaction()).thenReturn(tx);
     }
 
     @Test
@@ -69,6 +73,20 @@ class BookingDAOImplTest {
         verify(tx).begin();
         verify(em).persist(booking);
         verify(tx).commit();
+        verify(em).close();
+    }
+
+    @Test
+    void add_whenExceptionShouldRollbackAndClose() {
+        Booking booking = new Booking();
+        doThrow(new RuntimeException("fail")).when(em).persist(booking);
+        when(tx.isActive()).thenReturn(true);
+
+        assertThrows(RuntimeException.class, () -> dao.add(booking));
+
+        verify(tx).begin();
+        verify(em).persist(booking);
+        verify(tx).rollback();
         verify(em).close();
     }
 
@@ -140,6 +158,18 @@ class BookingDAOImplTest {
     }
 
     @Test
+    void findInRange_whenExceptionShouldClose() {
+        LocalDateTime from = LocalDateTime.now().minusDays(1);
+        LocalDateTime to = LocalDateTime.now().plusDays(1);
+
+        when(em.createNativeQuery(nativeSql, Booking.class)).thenThrow(new RuntimeException("query failed"));
+
+        assertThrows(RuntimeException.class, () -> dao.findInRange(from, to));
+
+        verify(em).close();
+    }
+
+    @Test
     void update_shouldMergeCommitAndClose() {
         Booking booking = new Booking();
         dao.update(booking);
@@ -148,6 +178,20 @@ class BookingDAOImplTest {
         verify(tx).begin();
         verify(em).merge(booking);
         verify(tx).commit();
+        verify(em).close();
+    }
+
+    @Test
+    void update_whenExceptionShouldRollbackAndClose() {
+        Booking booking = new Booking();
+        doThrow(new RuntimeException("fail")).when(em).merge(booking);
+        when(tx.isActive()).thenReturn(true);
+
+        assertThrows(RuntimeException.class, () -> dao.update(booking));
+
+        verify(tx).begin();
+        verify(em).merge(booking);
+        verify(tx).rollback();
         verify(em).close();
     }
 
@@ -183,14 +227,17 @@ class BookingDAOImplTest {
     }
 
     @Test
-    void add_whenExceptionShouldRollbackAndClose() {
+    void delete_whenExceptionShouldRollbackAndClose() {
         Booking booking = new Booking();
-        doThrow(new RuntimeException("fail")).when(em).persist(booking);
+        when(em.find(Booking.class, 99)).thenReturn(booking);
+        doThrow(new RuntimeException("fail")).when(em).remove(booking);
+        when(tx.isActive()).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> dao.add(booking));
+        assertThrows(RuntimeException.class, () -> dao.delete(99));
 
         verify(tx).begin();
-        verify(em).persist(booking);
+        verify(em).find(Booking.class, 99);
+        verify(em).remove(booking);
         verify(tx).rollback();
         verify(em).close();
     }

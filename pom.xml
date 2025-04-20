@@ -4,14 +4,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.example</groupId>
+    <groupId>com.restaurant</groupId>
     <artifactId>RestaurantManagement</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>18</maven.compiler.source>
         <maven.compiler.target>18</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <hibernate.version>6.5.2.Final</hibernate.version>
     </properties>
 
     <dependencies>
@@ -20,7 +22,6 @@
             <artifactId>mysql-connector-j</artifactId>
             <version>9.2.0</version>
         </dependency>
-
         <dependency>
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
@@ -37,21 +38,66 @@
             <version>6.3.0</version>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>5.10.1</version>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>4.11.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-        <version>5.11.0</version>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <version>4.11.0</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.9.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-core</artifactId>
+            <version>6.5.2.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.12</version>
+            <scope>runtime</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.restaurant.Main</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

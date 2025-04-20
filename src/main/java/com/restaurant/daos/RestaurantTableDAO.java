@@ -1,19 +1,21 @@
 package com.restaurant.daos;
 
-import com.restaurant.models.RestaurantTables;
+import com.restaurant.models.RestaurantTable;
 
 import java.util.List;
 
-public interface TableDAO {
-    void addTable(RestaurantTables table);
+public interface RestaurantTableDAO {
+    void add(RestaurantTable restaurantTable);
 
-    RestaurantTables getTableById(int id);
+    RestaurantTable getById(int id);
 
-    List<RestaurantTables> getAllTables();
+    List<RestaurantTable> findAll();
 
-    void updateTable(RestaurantTables table);                // capacity/coords/availability
+    RestaurantTable findByNumber(int number);
 
-    void updateTableAvailability(int id, boolean available);
+    List<RestaurantTable> findByCapacity(int capacity);
 
-    void deleteTable(int id);
+    void update(RestaurantTable restaurantTable);
+
+    void delete(int id);
 }

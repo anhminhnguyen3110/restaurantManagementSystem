@@ -4,8 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
-public abstract class Base {
-
+public abstract class BaseModel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;

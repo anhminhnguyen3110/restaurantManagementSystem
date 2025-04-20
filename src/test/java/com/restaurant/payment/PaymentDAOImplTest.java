@@ -1,4 +1,4 @@
-package com.restaurant;
+package com.restaurant.payment;
 
 import com.restaurant.constants.PaymentMethod;
 import com.restaurant.constants.PaymentStatus;
@@ -39,39 +39,40 @@ class PaymentDAOImplTest {
     @InjectMocks
     private PaymentDAOImpl dao;
 
-    private final String findAllJpql = "SELECT p FROM Payment p";
-    private final String findByOrderIdJpql = "SELECT p FROM Payment p WHERE p.order.id = :oid";
+    private final String findAllJpql      = "SELECT p FROM Payment p";
+    private final String findByOrderJpql  = "SELECT p FROM Payment p WHERE p.order.id = :oid";
     private final String findByStatusJpql = "SELECT p FROM Payment p WHERE p.status = :st";
     private final String findByMethodJpql = "SELECT p FROM Payment p WHERE p.method = :mth";
 
     @BeforeEach
     void setUp() {
-        when(emf.createEntityManager()).thenReturn(em);
-        when(em.getTransaction()).thenReturn(tx);
+        lenient().when(emf.createEntityManager()).thenReturn(em);
+        lenient().when(em.getTransaction()).thenReturn(tx);
     }
 
     @Test
     void add_shouldPersistCommitAndClose() {
-        Payment payment = new Payment();
-        dao.add(payment);
+        Payment p = new Payment();
+        dao.add(p);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).persist(payment);
+        verify(em).persist(p);
         verify(tx).commit();
         verify(em).close();
     }
 
     @Test
-    void add_whenException_shouldRollbackAndClose() {
-        Payment payment = new Payment();
-        doThrow(new RuntimeException("persist failed")).when(em).persist(payment);
+    void add_whenPersistThrows_shouldRollbackAndClose() {
+        Payment p = new Payment();
+        doThrow(new RuntimeException("oops")).when(em).persist(p);
+        when(tx.isActive()).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> dao.add(payment));
+        assertThrows(RuntimeException.class, () -> dao.add(p));
 
         verify(tx).begin();
-        verify(em).persist(payment);
+        verify(em).persist(p);
         verify(tx).rollback();
         verify(em).close();
     }
@@ -90,7 +91,7 @@ class PaymentDAOImplTest {
     }
 
     @Test
-    void findAll_shouldReturnListAndClose() {
+    void findAll_shouldQueryReturnListAndClose() {
         List<Payment> list = List.of(new Payment(), new Payment());
         when(em.createQuery(findAllJpql, Payment.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -105,46 +106,40 @@ class PaymentDAOImplTest {
     }
 
     @Test
-    void findByOrderId_shouldReturnFirstResultAndClose() {
-        int orderId = 7;
+    void findByOrderId_shouldReturnFirstAndClose() {
+        int oid = 7;
         Payment expected = new Payment();
-        when(em.createQuery(findByOrderIdJpql, Payment.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("oid", orderId)).thenReturn(typedQuery);
+        when(em.createQuery(findByOrderJpql, Payment.class)).thenReturn(typedQuery);
+        when(typedQuery.setParameter("oid", oid)).thenReturn(typedQuery);
         when(typedQuery.setMaxResults(1)).thenReturn(typedQuery);
         when(typedQuery.getResultStream()).thenReturn(Stream.of(expected));
 
-        Payment result = dao.findByOrderId(orderId);
+        Payment actual = dao.findByOrderId(oid);
 
-        assertSame(expected, result);
+        assertSame(expected, actual);
         verify(emf).createEntityManager();
-        verify(em).createQuery(findByOrderIdJpql, Payment.class);
-        verify(typedQuery).setParameter("oid", orderId);
+        verify(em).createQuery(findByOrderJpql, Payment.class);
+        verify(typedQuery).setParameter("oid", oid);
         verify(typedQuery).setMaxResults(1);
         verify(typedQuery).getResultStream();
         verify(em).close();
     }
 
     @Test
-    void findByOrderId_whenNoResult_shouldReturnNullAndClose() {
-        int orderId = 8;
-        when(em.createQuery(findByOrderIdJpql, Payment.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("oid", orderId)).thenReturn(typedQuery);
+    void findByOrderId_whenEmpty_shouldReturnNull() {
+        int oid = 99;
+        when(em.createQuery(findByOrderJpql, Payment.class)).thenReturn(typedQuery);
+        when(typedQuery.setParameter("oid", oid)).thenReturn(typedQuery);
         when(typedQuery.setMaxResults(1)).thenReturn(typedQuery);
         when(typedQuery.getResultStream()).thenReturn(Stream.empty());
 
-        Payment result = dao.findByOrderId(orderId);
+        assertNull(dao.findByOrderId(oid));
 
-        assertNull(result);
-        verify(emf).createEntityManager();
-        verify(em).createQuery(findByOrderIdJpql, Payment.class);
-        verify(typedQuery).setParameter("oid", orderId);
-        verify(typedQuery).setMaxResults(1);
-        verify(typedQuery).getResultStream();
         verify(em).close();
     }
 
     @Test
-    void findByStatus_shouldReturnListAndClose() {
+    void findByStatus_shouldQueryReturnListAndClose() {
         PaymentStatus status = PaymentStatus.COMPLETED;
         List<Payment> list = List.of(new Payment());
         when(em.createQuery(findByStatusJpql, Payment.class)).thenReturn(typedQuery);
@@ -162,9 +157,9 @@ class PaymentDAOImplTest {
     }
 
     @Test
-    void findByMethod_shouldReturnListAndClose() {
+    void findByMethod_shouldQueryReturnListAndClose() {
         PaymentMethod method = PaymentMethod.CREDIT_CARD;
-        List<Payment> list = List.of(new Payment());
+        List<Payment> list = List.of();
         when(em.createQuery(findByMethodJpql, Payment.class)).thenReturn(typedQuery);
         when(typedQuery.setParameter("mth", method)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -181,45 +176,75 @@ class PaymentDAOImplTest {
 
     @Test
     void update_shouldMergeCommitAndClose() {
-        Payment payment = new Payment();
-        dao.update(payment);
+        Payment p = new Payment();
+        dao.update(p);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).merge(payment);
+        verify(em).merge(p);
         verify(tx).commit();
         verify(em).close();
     }
 
     @Test
-    void delete_shouldRemoveWhenFoundCommitAndClose() {
-        Payment payment = new Payment();
-        when(em.find(Payment.class, 99)).thenReturn(payment);
+    void update_whenMergeThrows_shouldRollbackAndClose() {
+        Payment p = new Payment();
+        doThrow(new RuntimeException("fail")).when(em).merge(p);
+        when(tx.isActive()).thenReturn(true);
 
-        dao.delete(99);
+        assertThrows(RuntimeException.class, () -> dao.update(p));
+
+        verify(tx).begin();
+        verify(em).merge(p);
+        verify(tx).rollback();
+        verify(em).close();
+    }
+
+    @Test
+    void delete_shouldRemoveWhenFoundCommitAndClose() {
+        int id = 13;
+        Payment p = new Payment();
+        when(em.find(Payment.class, id)).thenReturn(p);
+
+        dao.delete(id);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).find(Payment.class, 99);
-        verify(em).remove(payment);
+        verify(em).find(Payment.class, id);
+        verify(em).remove(p);
         verify(tx).commit();
         verify(em).close();
     }
 
     @Test
     void delete_shouldNotRemoveWhenNotFoundButStillCommitAndClose() {
-        when(em.find(Payment.class, 100)).thenReturn(null);
+        int id = 14;
+        when(em.find(Payment.class, id)).thenReturn(null);
 
-        dao.delete(100);
+        dao.delete(id);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).find(Payment.class, 100);
+        verify(em).find(Payment.class, id);
         verify(em, never()).remove(any());
         verify(tx).commit();
+        verify(em).close();
+    }
+
+    @Test
+    void delete_whenFindThrows_shouldRollbackAndClose() {
+        int id = 21;
+        doThrow(new RuntimeException("oops")).when(em).find(Payment.class, id);
+        when(tx.isActive()).thenReturn(true);
+
+        assertThrows(RuntimeException.class, () -> dao.delete(id));
+
+        verify(tx).begin();
+        verify(em).find(Payment.class, id);
+        verify(tx).rollback();
         verify(em).close();
     }
 }

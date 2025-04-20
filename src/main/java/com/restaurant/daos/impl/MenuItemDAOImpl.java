@@ -1,93 +1,118 @@
 package com.restaurant.daos.impl;
 
 import com.restaurant.daos.MenuItemDAO;
+import com.restaurant.di.Inject;
+import com.restaurant.di.Injectable;
 import com.restaurant.models.MenuItem;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.TypedQuery;
 
-import java.sql.*;
-import java.util.ArrayList;
 import java.util.List;
 
+@Injectable
 public class MenuItemDAOImpl implements MenuItemDAO {
+    @Inject
+    private EntityManagerFactory emf;
 
-    private final Connection conn;
+    public MenuItemDAOImpl() {
+    }
 
-    public MenuItemDAOImpl(Connection conn) {
-        this.conn = conn;
+    public MenuItemDAOImpl(EntityManagerFactory emf) {
+        this.emf = emf;
     }
 
     @Override
-    public void addMenuItem(MenuItem item) {
-        String sql = "INSERT INTO menu_items (name, description, price, available) VALUES (?,?,?,?)";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, item.getName());
-            ps.setString(2, item.getDescription());
-            ps.setDouble(3, item.getPrice());
-            ps.setBoolean(4, item.isAvailable());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public void add(MenuItem item) {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            em.persist(item);
+            tx.commit();
+        } finally {
+            if (tx.isActive()) tx.rollback();
+            em.close();
         }
     }
 
     @Override
-    public MenuItem getMenuItemById(int id) {
-        String sql = "SELECT * FROM menu_items WHERE id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return map(rs);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    @Override
-    public List<MenuItem> getAllMenuItems() {
-        List<MenuItem> list = new ArrayList<>();
-        String sql = "SELECT * FROM menu_items";
-        try (Statement st = conn.createStatement()) {
-            ResultSet rs = st.executeQuery(sql);
-            while (rs.next()) list.add(map(rs));
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return list;
-    }
-
-    @Override
-    public void updateMenuItem(MenuItem item) {
-        String sql = "UPDATE menu_items SET name=?, description=?, price=?, available=? WHERE id=?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, item.getName());
-            ps.setString(2, item.getDescription());
-            ps.setDouble(3, item.getPrice());
-            ps.setBoolean(4, item.isAvailable());
-            ps.setInt(5, item.getId());
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public MenuItem getById(int id) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            return em.find(MenuItem.class, id);
+        } finally {
+            em.close();
         }
     }
 
     @Override
-    public void deleteMenuItem(int id) {
-        String sql = "DELETE FROM menu_items WHERE id = ?";
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+    public List<MenuItem> findAll() {
+        EntityManager em = emf.createEntityManager();
+        try {
+            TypedQuery<MenuItem> q = em.createQuery("SELECT m FROM MenuItem m", MenuItem.class);
+            return q.getResultList();
+        } finally {
+            em.close();
         }
     }
 
-    private MenuItem map(ResultSet rs) throws SQLException {
-        return new MenuItem(
-                rs.getInt("id"),
-                rs.getString("name"),
-                rs.getString("description"),
-                rs.getDouble("price"),
-                rs.getBoolean("available")
-        );
+    @Override
+    public MenuItem findByName(String name) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            TypedQuery<MenuItem> q = em.createQuery(
+                    "SELECT m FROM MenuItem m WHERE m.name = :name",
+                    MenuItem.class
+            ).setParameter("name", name).setMaxResults(1);
+            return q.getResultList().stream().findFirst().orElse(null);
+        } finally {
+            em.close();
+        }
+    }
+
+    @Override
+    public List<MenuItem> findByMenu(int menuId) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            TypedQuery<MenuItem> q = em.createQuery(
+                    "SELECT m FROM MenuItem m WHERE m.menu.id = :menuId",
+                    MenuItem.class
+            );
+            q.setParameter("menuId", menuId);
+            return q.getResultList();
+        } finally {
+            em.close();
+        }
+    }
+
+    @Override
+    public void update(MenuItem item) {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            em.merge(item);
+            tx.commit();
+        } finally {
+            if (tx.isActive()) tx.rollback();
+            em.close();
+        }
+    }
+
+    @Override
+    public void delete(int id) {
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction tx = em.getTransaction();
+        try {
+            tx.begin();
+            MenuItem m = em.find(MenuItem.class, id);
+            if (m != null) em.remove(m);
+            tx.commit();
+        } finally {
+            if (tx.isActive()) tx.rollback();
+            em.close();
+        }
     }
 }

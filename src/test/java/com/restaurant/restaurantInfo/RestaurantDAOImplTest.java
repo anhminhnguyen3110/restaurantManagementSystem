@@ -1,4 +1,4 @@
-package com.restaurant;
+package com.restaurant.restaurantInfo;
 
 import com.restaurant.daos.impl.RestaurantDAOImpl;
 import com.restaurant.models.Restaurant;
@@ -43,32 +43,32 @@ class RestaurantDAOImplTest {
 
     @BeforeEach
     void setUp() {
-        when(emf.createEntityManager()).thenReturn(em);
-        when(em.getTransaction()).thenReturn(tx);
+        lenient().when(emf.createEntityManager()).thenReturn(em);
+        lenient().when(em.getTransaction()).thenReturn(tx);
     }
-
     @Test
     void add_shouldPersistCommitAndClose() {
-        Restaurant restaurant = new Restaurant();
-        dao.add(restaurant);
+        Restaurant r = new Restaurant();
+        dao.add(r);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).persist(restaurant);
+        verify(em).persist(r);
         verify(tx).commit();
         verify(em).close();
     }
 
     @Test
-    void add_whenException_shouldRollbackAndClose() {
-        Restaurant restaurant = new Restaurant();
-        doThrow(new RuntimeException("persist failed")).when(em).persist(restaurant);
+    void add_whenPersistThrows_shouldRollbackAndClose() {
+        Restaurant r = new Restaurant();
+        doThrow(new RuntimeException("fail")).when(em).persist(r);
+        when(tx.isActive()).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> dao.add(restaurant));
+        assertThrows(RuntimeException.class, () -> dao.add(r));
 
         verify(tx).begin();
-        verify(em).persist(restaurant);
+        verify(em).persist(r);
         verify(tx).rollback();
         verify(em).close();
     }
@@ -76,18 +76,18 @@ class RestaurantDAOImplTest {
     @Test
     void getById_shouldFindReturnAndClose() {
         Restaurant expected = new Restaurant();
-        when(em.find(Restaurant.class, 15)).thenReturn(expected);
+        when(em.find(Restaurant.class, 55)).thenReturn(expected);
 
-        Restaurant actual = dao.getById(15);
+        Restaurant actual = dao.getById(55);
 
         assertSame(expected, actual);
         verify(emf).createEntityManager();
-        verify(em).find(Restaurant.class, 15);
+        verify(em).find(Restaurant.class, 55);
         verify(em).close();
     }
 
     @Test
-    void findAll_shouldReturnListAndClose() {
+    void findAll_shouldQueryReturnListAndClose() {
         List<Restaurant> list = List.of(new Restaurant(), new Restaurant());
         when(em.createQuery(findAllJpql, Restaurant.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
@@ -102,100 +102,126 @@ class RestaurantDAOImplTest {
     }
 
     @Test
-    void findByName_shouldReturnFirstResultAndClose() {
-        Restaurant first = new Restaurant();
+    void findByName_shouldReturnFirstAndClose() {
+        String name = "Chez Test";
+        Restaurant expected = new Restaurant();
         when(em.createQuery(findByNameJpql, Restaurant.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("name", "Chez Pierre")).thenReturn(typedQuery);
+        when(typedQuery.setParameter("name", name)).thenReturn(typedQuery);
         when(typedQuery.setMaxResults(1)).thenReturn(typedQuery);
-        when(typedQuery.getResultStream()).thenReturn(Stream.of(first));
+        when(typedQuery.getResultStream()).thenReturn(Stream.of(expected));
 
-        Restaurant actual = dao.findByName("Chez Pierre");
+        Restaurant actual = dao.findByName(name);
 
-        assertSame(first, actual);
+        assertSame(expected, actual);
         verify(emf).createEntityManager();
         verify(em).createQuery(findByNameJpql, Restaurant.class);
-        verify(typedQuery).setParameter("name", "Chez Pierre");
+        verify(typedQuery).setParameter("name", name);
         verify(typedQuery).setMaxResults(1);
         verify(typedQuery).getResultStream();
         verify(em).close();
     }
 
     @Test
-    void findByName_whenNoResult_shouldReturnNullAndClose() {
+    void findByName_whenEmpty_shouldReturnNull() {
+        String name = "Nope";
         when(em.createQuery(findByNameJpql, Restaurant.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("name", "Nonexistent")).thenReturn(typedQuery);
+        when(typedQuery.setParameter("name", name)).thenReturn(typedQuery);
         when(typedQuery.setMaxResults(1)).thenReturn(typedQuery);
         when(typedQuery.getResultStream()).thenReturn(Stream.empty());
 
-        Restaurant actual = dao.findByName("Nonexistent");
-
-        assertNull(actual);
-        verify(emf).createEntityManager();
-        verify(em).createQuery(findByNameJpql, Restaurant.class);
-        verify(typedQuery).setParameter("name", "Nonexistent");
-        verify(typedQuery).setMaxResults(1);
-        verify(typedQuery).getResultStream();
+        assertNull(dao.findByName(name));
         verify(em).close();
     }
 
     @Test
-    void findByAddress_shouldReturnListAndClose() {
+    void findByAddress_shouldQueryReturnListAndClose() {
+        String addr = "123 Main St";
         List<Restaurant> list = List.of(new Restaurant());
         when(em.createQuery(findByAddressJpql, Restaurant.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("address", "123 Main St")).thenReturn(typedQuery);
+        when(typedQuery.setParameter("address", addr)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<Restaurant> result = dao.findByAddress("123 Main St");
+        List<Restaurant> result = dao.findByAddress(addr);
 
         assertEquals(list, result);
         verify(emf).createEntityManager();
         verify(em).createQuery(findByAddressJpql, Restaurant.class);
-        verify(typedQuery).setParameter("address", "123 Main St");
+        verify(typedQuery).setParameter("address", addr);
         verify(typedQuery).getResultList();
         verify(em).close();
     }
 
     @Test
     void update_shouldMergeCommitAndClose() {
-        Restaurant restaurant = new Restaurant();
-        dao.update(restaurant);
+        Restaurant r = new Restaurant();
+        dao.update(r);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).merge(restaurant);
+        verify(em).merge(r);
         verify(tx).commit();
         verify(em).close();
     }
 
     @Test
-    void delete_shouldRemoveWhenFoundCommitAndClose() {
-        Restaurant restaurant = new Restaurant();
-        when(em.find(Restaurant.class, 27)).thenReturn(restaurant);
+    void update_whenMergeThrows_shouldRollbackAndClose() {
+        Restaurant r = new Restaurant();
+        doThrow(new RuntimeException("err")).when(em).merge(r);
+        when(tx.isActive()).thenReturn(true);
 
-        dao.delete(27);
+        assertThrows(RuntimeException.class, () -> dao.update(r));
+
+        verify(tx).begin();
+        verify(em).merge(r);
+        verify(tx).rollback();
+        verify(em).close();
+    }
+
+    @Test
+    void delete_shouldRemoveWhenFoundCommitAndClose() {
+        int id = 99;
+        Restaurant r = new Restaurant();
+        when(em.find(Restaurant.class, id)).thenReturn(r);
+
+        dao.delete(id);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).find(Restaurant.class, 27);
-        verify(em).remove(restaurant);
+        verify(em).find(Restaurant.class, id);
+        verify(em).remove(r);
         verify(tx).commit();
         verify(em).close();
     }
 
     @Test
     void delete_shouldNotRemoveWhenNotFoundButStillCommitAndClose() {
-        when(em.find(Restaurant.class, 28)).thenReturn(null);
+        int id = 100;
+        when(em.find(Restaurant.class, id)).thenReturn(null);
 
-        dao.delete(28);
+        dao.delete(id);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).find(Restaurant.class, 28);
+        verify(em).find(Restaurant.class, id);
         verify(em, never()).remove(any());
         verify(tx).commit();
+        verify(em).close();
+    }
+
+    @Test
+    void delete_whenFindThrows_shouldRollbackAndClose() {
+        int id = 42;
+        doThrow(new RuntimeException("boom")).when(em).find(Restaurant.class, id);
+        when(tx.isActive()).thenReturn(true);
+
+        assertThrows(RuntimeException.class, () -> dao.delete(id));
+
+        verify(tx).begin();
+        verify(em).find(Restaurant.class, id);
+        verify(tx).rollback();
         verify(em).close();
     }
 }

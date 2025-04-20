@@ -1,14 +1,12 @@
-package com.restaurant;
+package com.restaurant.customer;
 
 import com.restaurant.daos.impl.CustomerDAOImpl;
 import com.restaurant.models.Customer;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.TypedQuery;
+import jakarta.persistence.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -42,32 +40,37 @@ class CustomerDAOImplTest {
 
     @BeforeEach
     void setUp() {
-        when(emf.createEntityManager()).thenReturn(em);
-        when(em.getTransaction()).thenReturn(tx);
+        lenient().when(emf.createEntityManager()).thenReturn(em);
+        lenient().when(em.getTransaction()).thenReturn(tx);
     }
 
     @Test
-    void add_shouldPersistCommitAndClose() {
-        Customer customer = new Customer();
-        dao.add(customer);
+    void add_shouldPersistCommitAndClose_withoutRollback() {
+        Customer cust = new Customer();
 
-        verify(emf).createEntityManager();
-        verify(em).getTransaction();
-        verify(tx).begin();
-        verify(em).persist(customer);
-        verify(tx).commit();
-        verify(em).close();
+        dao.add(cust);
+
+        InOrder ord = inOrder(emf, em, tx);
+        ord.verify(emf).createEntityManager();
+        ord.verify(em).getTransaction();
+        ord.verify(tx).begin();
+        ord.verify(em).persist(cust);
+        ord.verify(tx).commit();
+        verify(tx, never()).rollback();
+        ord.verify(em).close();
     }
 
     @Test
-    void add_whenException_shouldRollbackAndClose() {
-        Customer customer = new Customer();
-        doThrow(new RuntimeException("fail")).when(em).persist(customer);
+    void add_whenPersistThrows_shouldRollbackAndClose() {
+        Customer cust = new Customer();
+        doThrow(new RuntimeException("persist failed")).when(em).persist(cust);
+        when(tx.isActive()).thenReturn(true);
 
-        assertThrows(RuntimeException.class, () -> dao.add(customer));
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> dao.add(cust));
+        assertEquals("persist failed", ex.getMessage());
 
         verify(tx).begin();
-        verify(em).persist(customer);
+        verify(em).persist(cust);
         verify(tx).rollback();
         verify(em).close();
     }
@@ -75,13 +78,13 @@ class CustomerDAOImplTest {
     @Test
     void getById_shouldFindReturnAndClose() {
         Customer expected = new Customer();
-        when(em.find(Customer.class, 123)).thenReturn(expected);
+        when(em.find(Customer.class, 7)).thenReturn(expected);
 
-        Customer actual = dao.getById(123);
+        Customer actual = dao.getById(7);
 
         assertSame(expected, actual);
         verify(emf).createEntityManager();
-        verify(em).find(Customer.class, 123);
+        verify(em).find(Customer.class, 7);
         verify(em).close();
     }
 
@@ -101,79 +104,101 @@ class CustomerDAOImplTest {
     }
 
     @Test
-    void findByPhoneNumber_shouldReturnFirstResultAndClose() {
-        Customer expected = new Customer();
+    void findByPhoneNumber_whenFound_shouldReturnFirstAndClose() {
+        Customer c1 = new Customer();
+        Customer c2 = new Customer();
         when(em.createQuery(findByPhoneJpql, Customer.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("phone", "555-0001")).thenReturn(typedQuery);
-        when(typedQuery.getResultStream()).thenReturn(Stream.of(expected));
+        when(typedQuery.setParameter("phone", "123")).thenReturn(typedQuery);
+        when(typedQuery.getResultStream()).thenReturn(Stream.of(c1, c2));
 
-        Customer actual = dao.findByPhoneNumber("555-0001");
+        Customer result = dao.findByPhoneNumber("123");
 
-        assertSame(expected, actual);
+        assertSame(c1, result);
         verify(emf).createEntityManager();
         verify(em).createQuery(findByPhoneJpql, Customer.class);
-        verify(typedQuery).setParameter("phone", "555-0001");
+        verify(typedQuery).setParameter("phone", "123");
         verify(typedQuery).getResultStream();
         verify(em).close();
     }
 
     @Test
-    void findByPhoneNumber_whenNoResult_shouldReturnNullAndClose() {
+    void findByPhoneNumber_whenNotFound_shouldReturnNullAndClose() {
         when(em.createQuery(findByPhoneJpql, Customer.class)).thenReturn(typedQuery);
-        when(typedQuery.setParameter("phone", "000")).thenReturn(typedQuery);
+        when(typedQuery.setParameter("phone", "999")).thenReturn(typedQuery);
         when(typedQuery.getResultStream()).thenReturn(Stream.empty());
 
-        Customer actual = dao.findByPhoneNumber("000");
+        Customer result = dao.findByPhoneNumber("999");
 
-        assertNull(actual);
+        assertNull(result);
         verify(emf).createEntityManager();
         verify(em).createQuery(findByPhoneJpql, Customer.class);
-        verify(typedQuery).setParameter("phone", "000");
+        verify(typedQuery).setParameter("phone", "999");
         verify(typedQuery).getResultStream();
         verify(em).close();
     }
 
     @Test
-    void update_shouldMergeCommitAndClose() {
-        Customer customer = new Customer();
-        dao.update(customer);
+    void update_shouldMergeCommitAndClose_withoutRollback() {
+        Customer cust = new Customer();
 
-        verify(emf).createEntityManager();
-        verify(em).getTransaction();
+        dao.update(cust);
+
+        InOrder ord = inOrder(emf, em, tx);
+        ord.verify(emf).createEntityManager();
+        ord.verify(em).getTransaction();
+        ord.verify(tx).begin();
+        ord.verify(em).merge(cust);
+        ord.verify(tx).commit();
+        verify(tx, never()).rollback();
+        ord.verify(em).close();
+    }
+
+    @Test
+    void update_whenMergeThrows_shouldRollbackAndClose() {
+        Customer cust = new Customer();
+        doThrow(new PersistenceException("merge failed")).when(em).merge(cust);
+        when(tx.isActive()).thenReturn(true);
+
+        PersistenceException ex = assertThrows(PersistenceException.class, () -> dao.update(cust));
+        assertEquals("merge failed", ex.getMessage());
+
         verify(tx).begin();
-        verify(em).merge(customer);
-        verify(tx).commit();
+        verify(em).merge(cust);
+        verify(tx).rollback();
         verify(em).close();
     }
 
     @Test
-    void delete_shouldRemoveWhenFoundCommitAndClose() {
-        Customer customer = new Customer();
-        when(em.find(Customer.class, 77)).thenReturn(customer);
+    void delete_shouldRemoveWhenFound_commitAndClose() {
+        Customer cust = new Customer();
+        when(em.find(Customer.class, 55)).thenReturn(cust);
 
-        dao.delete(77);
+        dao.delete(55);
 
-        verify(emf).createEntityManager();
-        verify(em).getTransaction();
-        verify(tx).begin();
-        verify(em).find(Customer.class, 77);
-        verify(em).remove(customer);
-        verify(tx).commit();
-        verify(em).close();
+        InOrder ord = inOrder(emf, em, tx);
+        ord.verify(emf).createEntityManager();
+        ord.verify(em).getTransaction();
+        ord.verify(tx).begin();
+        ord.verify(em).find(Customer.class, 55);
+        ord.verify(em).remove(cust);
+        ord.verify(tx).commit();
+        verify(tx, never()).rollback();
+        ord.verify(em).close();
     }
 
     @Test
-    void delete_shouldNotRemoveWhenNotFoundButStillCommitAndClose() {
-        when(em.find(Customer.class, 88)).thenReturn(null);
+    void delete_shouldNotRemoveWhenNotFound_butStillCommitAndClose() {
+        when(em.find(Customer.class, 66)).thenReturn(null);
 
-        dao.delete(88);
+        dao.delete(66);
 
         verify(emf).createEntityManager();
         verify(em).getTransaction();
         verify(tx).begin();
-        verify(em).find(Customer.class, 88);
+        verify(em).find(Customer.class, 66);
         verify(em, never()).remove(any());
         verify(tx).commit();
+        verify(tx, never()).rollback();
         verify(em).close();
     }
 }

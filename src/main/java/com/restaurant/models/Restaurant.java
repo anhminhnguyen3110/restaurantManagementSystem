@@ -1,4 +1,59 @@
 package com.restaurant.models;
 
-public class Restaurant {
+import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "restaurants", indexes = @Index(columnList = "name", unique = true))
+public class Restaurant extends BaseModel {
+    @Column(name = "name", nullable = false, unique = true)
+    private String name;
+
+    @Column(name = "address", nullable = false)
+    private String address;
+
+    @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Menu> menus = new ArrayList<>();
+
+    public Restaurant() {}
+
+    public Restaurant(String name, String address) {
+        this.name = name;
+        this.address = address;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public List<Menu> getMenus() {
+        return menus;
+    }
+
+    public void setMenus(List<Menu> menus) {
+        this.menus = menus;
+    }
+
+    public void addMenu(Menu menu) {
+        menus.add(menu);
+        menu.setRestaurant(this);
+    }
+
+    public void removeMenu(Menu menu) {
+        menus.remove(menu);
+        menu.setRestaurant(null);
+    }
 }

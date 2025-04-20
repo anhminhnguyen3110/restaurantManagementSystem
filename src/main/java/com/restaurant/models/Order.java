@@ -1,54 +1,84 @@
 package com.restaurant.models;
 
+import com.restaurant.constants.OrderStatus;
+import com.restaurant.constants.OrderType;
+import jakarta.persistence.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
-public class Order {
-    private int id;
-    private int bookingId;
-    private List<Integer> menuItemIds; // Assume this maps to a junction table in DB
-    private String status; // e.g., "PENDING", "PROCESSING", "COMPLETED", "CANCELLED"
+@Entity
+@Table(name = "orders")
+public class Order extends BaseModel {
+
+    @OneToOne(
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY,
+            optional = true
+    )
+    @JoinColumn(name = "restaurant_table_id")
+    private RestaurantTable restaurantTable;
+
+    @ManyToMany
+    @JoinTable(
+            name = "order_menu_items",
+            joinColumns = @JoinColumn(name = "order_id"),
+            inverseJoinColumns = @JoinColumn(name = "menu_item_id")
+    )
+    private List<OrderItem> items = new ArrayList<>();
+
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Payment payment;
+
+    @Column(length = 20, nullable = false)
+    private OrderStatus status = OrderStatus.PENDING;
+
     private double totalPrice;
 
-    // Constructors
-    public Order() {}
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    private OrderType orderType;
 
-    public Order(int id, int bookingId, List<Integer> menuItemIds, String status, double totalPrice) {
-        this.id = id;
-        this.bookingId = bookingId;
-        this.menuItemIds = menuItemIds;
-        this.status = status;
-        this.totalPrice = totalPrice;
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
+    private Shipment shipment;
+
+    public Order() {
     }
 
-    public int getId() {
-        return id;
+    public Order(List<OrderItem> items, OrderType orderType) {
+        this.items = items;
+        recalcTotal();
+        this.orderType = orderType;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void recalcTotal() {
+        this.totalPrice = items.stream()
+                .mapToDouble(item -> item.getMenuItem().getPrice())
+                .sum();
     }
 
-    public int getBookingId() {
-        return bookingId;
+    public List<OrderItem> getItems() {
+        return items;
     }
 
-    public void setBookingId(int bookingId) {
-        this.bookingId = bookingId;
+    public void setItems(List<OrderItem> items) {
+        this.items = items;
+        recalcTotal();
     }
 
-    public List<Integer> getMenuItemIds() {
-        return menuItemIds;
+    public Payment getPayment() {
+        return payment;
     }
 
-    public void setMenuItemIds(List<Integer> menuItemIds) {
-        this.menuItemIds = menuItemIds;
+    public void setPayment(Payment payment) {
+        this.payment = payment;
     }
 
-    public String getStatus() {
+    public OrderStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(OrderStatus status) {
         this.status = status;
     }
 
@@ -56,7 +86,31 @@ public class Order {
         return totalPrice;
     }
 
-    public void setTotalPrice(double totalPrice) {
-        this.totalPrice = totalPrice;
+    public void setTotalPrice(double price) {
+        this.totalPrice = price;
+    }
+
+    public RestaurantTable getRestaurantTable() {
+        return restaurantTable;
+    }
+
+    public void setRestaurantTable(RestaurantTable restaurantTable) {
+        this.restaurantTable = restaurantTable;
+    }
+
+    public OrderType getOrderType() {
+        return orderType;
+    }
+
+    public void setOrderType(OrderType orderType) {
+        this.orderType = orderType;
+    }
+
+    public Shipment getShipment() {
+        return shipment;
+    }
+
+    public void setShipment(Shipment s) {
+        this.shipment = s;
     }
 }
