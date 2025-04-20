@@ -1,7 +1,7 @@
 package com.restaurant.daos.impl;
 
 import com.restaurant.daos.TableDAO;
-import com.restaurant.models.Table;
+import com.restaurant.models.RestaurantTables;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ public class TableDAOImpl implements TableDAO {
     }
 
     @Override
-    public void addTable(Table t) {
+    public void addTable(RestaurantTables t) {
         String sql = "INSERT INTO tables (number,capacity,x_coord,y_coord,available) VALUES (?,?,?,?,?)";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, t.getNumber());
@@ -31,7 +31,7 @@ public class TableDAOImpl implements TableDAO {
     }
 
     @Override
-    public Table getTableById(int id) {
+    public RestaurantTables getTableById(int id) {
         String sql = "SELECT * FROM tables WHERE id=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -44,8 +44,8 @@ public class TableDAOImpl implements TableDAO {
     }
 
     @Override
-    public List<Table> getAllTables() {
-        List<Table> list = new ArrayList<>();
+    public List<RestaurantTables> getAllTables() {
+        List<RestaurantTables> list = new ArrayList<>();
         try (Statement st = conn.createStatement();
              ResultSet rs = st.executeQuery("SELECT * FROM tables")) {
             while (rs.next()) list.add(map(rs));
@@ -56,7 +56,7 @@ public class TableDAOImpl implements TableDAO {
     }
 
     @Override
-    public void updateTable(Table t) {
+    public void updateTable(RestaurantTables t) {
         String sql = "UPDATE tables SET number=?, capacity=?, x_coord=?, y_coord=?, available=? WHERE id=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, t.getNumber());
@@ -94,14 +94,14 @@ public class TableDAOImpl implements TableDAO {
         }
     }
 
-    private Table map(ResultSet rs) throws SQLException {
-        return new Table(
-                rs.getInt("id"),
-                rs.getInt("number"),
-                rs.getInt("capacity"),
-                rs.getInt("x_coord"),
-                rs.getInt("y_coord"),
-                rs.getBoolean("available")
+    private RestaurantTables map(ResultSet rs) throws SQLException {
+        return new RestaurantTables(
+            rs.getInt("id"),
+            rs.getInt("number"),
+            rs.getInt("capacity"),
+            rs.getInt("x_coord"),
+            rs.getInt("y_coord"),
+            rs.getBoolean("available")
         );
     }
 }
