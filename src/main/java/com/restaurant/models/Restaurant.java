@@ -1,6 +1,8 @@
 package com.restaurant.models;
 
+import com.restaurant.constants.RestaurantStatus;
 import jakarta.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,10 +15,22 @@ public class Restaurant extends BaseModel {
     @Column(name = "address", nullable = false)
     private String address;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private RestaurantStatus status = RestaurantStatus.INACTIVE;
+
     @OneToMany(mappedBy = "restaurant", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Menu> menus = new ArrayList<>();
 
-    public Restaurant() {}
+    @OneToMany(
+            mappedBy = "restaurant",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<RestaurantTable> tables = new ArrayList<>();
+
+    public Restaurant() {
+    }
 
     public Restaurant(String name, String address) {
         this.name = name;
@@ -55,5 +69,21 @@ public class Restaurant extends BaseModel {
     public void removeMenu(Menu menu) {
         menus.remove(menu);
         menu.setRestaurant(null);
+    }
+
+    public RestaurantStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(RestaurantStatus status) {
+        this.status = status;
+    }
+
+    public List<RestaurantTable> getTables() {
+        return tables;
+    }
+
+    public void setTables(List<RestaurantTable> tables) {
+        this.tables = tables;
     }
 }

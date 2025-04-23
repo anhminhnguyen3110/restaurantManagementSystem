@@ -10,7 +10,7 @@ public class OrderItem {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
@@ -18,7 +18,7 @@ public class OrderItem {
     @JoinColumn(name = "menu_item_id", nullable = false)
     private MenuItem menuItem;
 
-    @Column(nullable = true, length = 255)
+    @Column(nullable = true, columnDefinition = "TEXT")
     private String customization;
 
     private int quantity = 1;

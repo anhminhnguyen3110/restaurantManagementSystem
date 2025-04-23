@@ -1,9 +1,9 @@
 package com.restaurant.constants;
 
 public enum PaymentStatus {
-    PENDING("Pending"),
-    COMPLETED("Completed"),
-    FAILED("Failed");
+    PENDING("pending"),
+    COMPLETED("completed"),
+    FAILED("failed");
 
     private final String status;
 
@@ -12,12 +12,12 @@ public enum PaymentStatus {
     }
 
     public String getStatus() {
-        return status;
+        return status.toLowerCase().replace("_", " ");
     }
 
     @Override
     public String toString() {
-        return status;
+        return this.getStatus();
     }
 
     public static PaymentStatus fromString(String status) {

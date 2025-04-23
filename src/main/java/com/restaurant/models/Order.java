@@ -11,19 +11,18 @@ import java.util.List;
 @Table(name = "orders")
 public class Order extends BaseModel {
 
-    @OneToOne(
+    @ManyToOne(
             cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY,
+            fetch = FetchType.EAGER,
             optional = true
     )
     @JoinColumn(name = "restaurant_table_id")
     private RestaurantTable restaurantTable;
 
-    @ManyToMany
-    @JoinTable(
-            name = "order_menu_items",
-            joinColumns = @JoinColumn(name = "order_id"),
-            inverseJoinColumns = @JoinColumn(name = "menu_item_id")
+    @OneToMany(
+            mappedBy = "order",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
     )
     private List<OrderItem> items = new ArrayList<>();
 
@@ -53,7 +52,7 @@ public class Order extends BaseModel {
 
     public void recalcTotal() {
         this.totalPrice = items.stream()
-                .mapToDouble(item -> item.getMenuItem().getPrice())
+                .mapToDouble(item -> item.getMenuItem().getPrice() * item.getQuantity())
                 .sum();
     }
 
@@ -112,5 +111,17 @@ public class Order extends BaseModel {
 
     public void setShipment(Shipment s) {
         this.shipment = s;
+    }
+
+    public void addItem(OrderItem item) {
+        items.add(item);
+        item.setOrder(this);
+        recalcTotal();
+    }
+
+    public void removeItem(OrderItem item) {
+        items.remove(item);
+        item.setOrder(null);
+        recalcTotal();
     }
 }

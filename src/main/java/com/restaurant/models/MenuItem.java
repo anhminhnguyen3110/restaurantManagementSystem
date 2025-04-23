@@ -6,7 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "menu_items", indexes = @Index(columnList = "name", unique = true))
+@Table(name = "menu_items", indexes = @Index(columnList = "name"),
+        uniqueConstraints = @UniqueConstraint(columnNames = {"menu_id", "name"}))
 public class MenuItem extends BaseModel {
     @Column(nullable = false)
     private String name;
@@ -18,7 +19,7 @@ public class MenuItem extends BaseModel {
     private double price;
 
     @Column(name = "available", nullable = false)
-    private boolean available = true;
+    private boolean available = false;
 
     @OneToMany(mappedBy = "menuItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
@@ -26,7 +27,7 @@ public class MenuItem extends BaseModel {
     @OneToMany(mappedBy = "menuItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MenuItemIngredient> ingredients = new ArrayList<>();
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "menu_id", nullable = false)
     private Menu menu;
 

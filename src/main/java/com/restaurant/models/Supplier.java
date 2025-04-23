@@ -11,7 +11,7 @@ public class Supplier extends BaseModel {
     @Column(nullable = false, unique = true, length = 100)
     private String name;
 
-    @Column(nullable = true, length = 20)
+    @Column(nullable = true, length = 100)
     private String email;
 
     @Column(nullable = true, length = 15)

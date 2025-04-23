@@ -1,5 +1,6 @@
 package com.restaurant.models;
 
+import com.restaurant.constants.IngredientUnit;
 import jakarta.persistence.*;
 
 @Entity
@@ -20,7 +21,7 @@ public class MenuItemIngredient extends BaseModel {
     private int quantityRequired; // e.g. 200 grams, 1 unit
 
     @Column(nullable = false)
-    private String unit; // e.g. grams, units, liters
+    private IngredientUnit unit; // e.g. grams, units, liters
 
     public MenuItemIngredient() {
     }
@@ -53,5 +54,13 @@ public class MenuItemIngredient extends BaseModel {
 
     public void setQuantityRequired(int quantityRequired) {
         this.quantityRequired = quantityRequired;
+    }
+
+    public IngredientUnit getUnit() {
+        return unit;
+    }
+
+    public void setUnit(IngredientUnit unit) {
+        this.unit = unit;
     }
 }

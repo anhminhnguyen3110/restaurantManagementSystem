@@ -1,9 +1,9 @@
 package com.restaurant.constants;
 
 public enum OrderType {
-    DINE_IN("Dine_In"),
-    TAKE_AWAY("Take_Away"),
-    DELIVERY("Delivery");
+    DINE_IN("dine_in"),
+    TAKE_AWAY("take_away"),
+    DELIVERY("delivery");
 
     private final String type;
 
@@ -12,12 +12,12 @@ public enum OrderType {
     }
 
     public String getType() {
-        return type;
+        return type.toLowerCase().replace("_", " ");
     }
 
     @Override
     public String toString() {
-        return type;
+        return this.getType();
     }
 
     public static OrderType fromString(String status) {

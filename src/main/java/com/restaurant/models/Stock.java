@@ -13,12 +13,15 @@ public class Stock extends BaseModel {
     private List<MenuItemIngredient> usedIn = new ArrayList<>();
 
     @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
     private int quantity;
 
     @Column(name = "min_threshold", nullable = false)
     private int minThreshold = 0;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "supplier_id", nullable = false)
     private Supplier supplier;
 
@@ -64,5 +67,21 @@ public class Stock extends BaseModel {
 
     public void setUsedIn(List<MenuItemIngredient> usedIn) {
         this.usedIn = usedIn;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Supplier getSupplier() {
+        return supplier;
+    }
+
+    public void setSupplier(Supplier supplier) {
+        this.supplier = supplier;
     }
 }

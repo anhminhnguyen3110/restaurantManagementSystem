@@ -1,10 +1,10 @@
 package com.restaurant.constants;
 
 public enum UserRole {
-    STAFF("Staff"),
-    MANAGER("Manager"),
-    OWNER("Owner"),
-    SHIPPER("Shipper");
+    STAFF("staff"),
+    MANAGER("manager"),
+    OWNER("owner"),
+    SHIPPER("shipper");
 
     private final String role;
 
@@ -13,12 +13,12 @@ public enum UserRole {
     }
 
     public String getRole() {
-        return role;
+        return role.toLowerCase().replace("_", " ");
     }
 
     @Override
     public String toString() {
-        return role;
+        return this.getRole();
     }
 
     public static UserRole fromString(String role) {

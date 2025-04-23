@@ -1,27 +1,27 @@
 package com.restaurant.constants;
 
 public enum OrderStatus {
-    PENDING("Pending"),
-    PREPARING("Preparing"),
-    READY("Ready"),
-    PROCESSED("Processed"),
-    READY_FOR_PICKUP("Ready_For_Pickup"), // For takeaway orders
-    COMPLETED("Completed"),
-    CANCELLED("Cancelled");
+    PENDING("pending"),
+    PREPARING("preparing"),
+    READY("ready"),
+    PROCESSED("processed"),
+    READY_FOR_PICKUP("ready_for_pickup"),
+    COMPLETED("completed"),
+    CANCELLED("cancelled");
 
     private final String status;
 
-    OrderStatus(String status) {  // Changed to accept the status parameter
+    OrderStatus(String status) {
         this.status = status;
     }
 
     public String getStatus() {
-        return status;
+        return status.toLowerCase().replace("_", " ");
     }
 
     @Override
     public String toString() {
-        return status;
+        return this.getStatus();
     }
 
     public static OrderStatus fromString(String status) {

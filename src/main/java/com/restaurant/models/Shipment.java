@@ -4,6 +4,8 @@ import com.restaurant.constants.ShipmentService;
 import com.restaurant.constants.ShipmentStatus;
 import jakarta.persistence.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "shipments", indexes = {
         @Index(columnList = "order_id"),
@@ -12,7 +14,7 @@ import jakarta.persistence.*;
         @Index(columnList = "shipper_id")
 })
 public class Shipment extends BaseModel {
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
@@ -20,7 +22,7 @@ public class Shipment extends BaseModel {
     @Column(name = "service_type", nullable = false)
     private ShipmentService serviceType;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "shipper_id")
     private User shipper;
 
@@ -28,16 +30,19 @@ public class Shipment extends BaseModel {
     @Column(nullable = false)
     private ShipmentStatus status = ShipmentStatus.SHIPPING;
 
+    @Column(unique = true)
     private String trackingNumber;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
     public Shipment() {
+        this.trackingNumber = UUID.randomUUID().toString();
     }
 
     public Shipment(Order order, ShipmentService serviceType, Customer customer) {
+        this();
         this.order = order;
         this.serviceType = serviceType;
         this.customer = customer;

@@ -84,4 +84,12 @@ public class Customer extends BaseModel {
     public void setBookings(List<Booking> bookings) {
         this.bookings = bookings;
     }
+
+    public List<Shipment> getShipments() {
+        return shipments;
+    }
+
+    public void setShipments(List<Shipment> shipments) {
+        this.shipments = shipments;
+    }
 }

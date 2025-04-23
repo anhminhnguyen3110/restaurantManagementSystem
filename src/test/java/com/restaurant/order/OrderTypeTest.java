@@ -27,7 +27,6 @@ class OrderTypeTest {
         assertSame(OrderType.TAKE_AWAY, OrderType.fromString("Take_Away"));
         assertSame(OrderType.DELIVERY,  OrderType.fromString("Delivery"));
 
-        // also ensure looping through all
         for (OrderType t : OrderType.values()) {
             assertSame(t, OrderType.fromString(t.getType()));
         }

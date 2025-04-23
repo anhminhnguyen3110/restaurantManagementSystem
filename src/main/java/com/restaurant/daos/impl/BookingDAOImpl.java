@@ -4,19 +4,19 @@ import com.restaurant.daos.BookingDAO;
 import com.restaurant.di.Inject;
 import com.restaurant.di.Injectable;
 import com.restaurant.models.Booking;
+import com.restaurant.dtos.booking.GetBookingsDto;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.TypedQuery;
-import java.time.LocalDateTime;
+import jakarta.persistence.criteria.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Injectable
 public class BookingDAOImpl implements BookingDAO {
     @Inject
     private EntityManagerFactory emf;
-
-    public BookingDAOImpl() {}
 
     @Override
     public void add(Booking booking) {
@@ -43,52 +43,59 @@ public class BookingDAOImpl implements BookingDAO {
     }
 
     @Override
-    public List<Booking> findByCustomerPhone(String phone) {
+    public List<Booking> findAll(GetBookingsDto dto) {
         EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<Booking> q = em.createQuery(
-                    "SELECT b FROM Booking b JOIN b.customer c WHERE c.phoneNumber = :phone",
-                    Booking.class
-            );
-            q.setParameter("phone", phone);
-            return q.getResultList();
-        } finally {
-            em.close();
-        }
-    }
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Booking> cq = cb.createQuery(Booking.class);
+            Root<Booking> root = cq.from(Booking.class);
+            root.fetch("customer", JoinType.LEFT);
+            Fetch<?,?> tableFetch = root.fetch("table", JoinType.LEFT);
+            tableFetch.fetch("restaurant", JoinType.LEFT);
 
-    @Override
-    public List<Booking> findAll() {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<Booking> q = em.createQuery("SELECT b FROM Booking b", Booking.class);
-            return q.getResultList();
-        } finally {
-            em.close();
-        }
-    }
+            List<Predicate> preds = new ArrayList<>();
+            if (dto.getCustomerName()!=null && !dto.getCustomerName().isBlank()) {
+                preds.add(cb.like(cb.lower(root.get("customer").get("name")), "%" + dto.getCustomerName().toLowerCase() + "%"));
+            }
+            if (dto.getPhoneNumber()!=null && !dto.getPhoneNumber().isBlank()) {
+                preds.add(cb.like(cb.lower(root.get("customer").get("phoneNumber")), "%" + dto.getPhoneNumber().toLowerCase() + "%"));
+            }
+            if (dto.getTableNumber()!=null) {
+                preds.add(cb.equal(root.get("table").get("number"), dto.getTableNumber()));
+            }
+            if (dto.getStatus()!=null) {
+                preds.add(cb.equal(root.get("status"), dto.getStatus()));
+            }
+            if (dto.getFrom()!=null) {
+                preds.add(cb.greaterThanOrEqualTo(root.get("start"), dto.getFrom()));
+            }
+            if (dto.getTo()!=null) {
+                preds.add(cb.lessThanOrEqualTo(root.get("start"), dto.getTo()));
+            }
+            if (!preds.isEmpty()) {
+                cq.where(preds.toArray(new Predicate[0]));
+            }
 
-    @Override
-    public List<Booking> findInRange(LocalDateTime from, LocalDateTime to) {
-        String sql =
-                "SELECT * FROM bookings b " +
-                        "WHERE b.start_time < :to " +
-                        "  AND TIMESTAMPADD(MINUTE, " +
-                        "      CASE b.duration " +
-                        "        WHEN 'HALF_HOUR' THEN 30 " +
-                        "        WHEN 'ONE_HOUR' THEN 60 " +
-                        "        WHEN 'ONE_AND_HALF_HOUR' THEN 90 " +
-                        "        WHEN 'TWO_HOURS' THEN 120 " +
-                        "        WHEN 'TWO_AND_HALF_HOUR' THEN 150 " +
-                        "        WHEN 'THREE_HOURS' THEN 180 " +
-                        "        ELSE 210 " +
-                        "      END, b.start_time) > :from";
-        EntityManager em = emf.createEntityManager();
-        try {
-            return em.createNativeQuery(sql, Booking.class)
-                    .setParameter("from", from)
-                    .setParameter("to", to)
-                    .getResultList();
+            String sortBy = dto.getSortBy();
+            String dir = dto.getSortDir();
+            Path<?> sortPath;
+            switch (sortBy) {
+                case "customer"   -> sortPath = root.get("customer").get("name");
+                case "phone"      -> sortPath = root.get("customer").get("phoneNumber");
+                case "restaurant" -> sortPath = root.get("table").get("restaurant").get("name");
+                case "table"      -> sortPath = root.get("table").get("number");
+                case "seats"      -> sortPath = root.get("table").get("capacity");
+                case "duration"   -> sortPath = root.get("duration");
+                case "start"      -> sortPath = root.get("start");
+                case "end"        -> sortPath = root.get("end");
+                default           -> sortPath = root.get("createdAt");
+            }
+            cq.orderBy("desc".equalsIgnoreCase(dir) ? cb.desc(sortPath) : cb.asc(sortPath));
+
+            TypedQuery<Booking> query = em.createQuery(cq);
+            query.setFirstResult(dto.getPage() * dto.getSize());
+            query.setMaxResults(dto.getSize());
+            return query.getResultList();
         } finally {
             em.close();
         }
@@ -115,7 +122,7 @@ public class BookingDAOImpl implements BookingDAO {
         try {
             tx.begin();
             Booking b = em.find(Booking.class, id);
-            if (b != null) em.remove(b);
+            if (b!=null) em.remove(b);
             tx.commit();
         } finally {
             if (tx.isActive()) tx.rollback();

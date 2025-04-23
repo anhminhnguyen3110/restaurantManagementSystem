@@ -12,12 +12,12 @@ public enum ShipmentStatus {
     }
 
     public String getStatus() {
-        return status;
+        return status.toLowerCase().replace("_", " ");
     }
 
     @Override
     public String toString() {
-        return status;
+        return this.getStatus();
     }
 
     public static ShipmentStatus fromString(String status) {

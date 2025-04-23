@@ -14,7 +14,7 @@ public class Menu extends BaseModel {
     @Column(nullable = true)
     private String description;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "restaurant_id")
     private Restaurant restaurant;
 

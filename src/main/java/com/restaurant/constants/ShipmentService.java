@@ -1,7 +1,7 @@
 package com.restaurant.constants;
 
 public enum ShipmentService {
-    GRAB("Grab"), DIDI("Didi"), INTERNAL("Internal");
+    GRAB("grab"), DIDI("didi"), INTERNAL("internal");
 
     private final String service;
 
@@ -10,12 +10,12 @@ public enum ShipmentService {
     }
 
     public String getService() {
-        return service;
+        return service.toLowerCase().replace("_", " ");
     }
 
     @Override
     public String toString() {
-        return service;
+        return this.getService();
     }
 
     public static ShipmentService fromString(String service) {

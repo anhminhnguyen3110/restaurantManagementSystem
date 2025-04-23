@@ -8,6 +8,9 @@ import java.util.List;
 @Entity
 @Table(name = "restaurant_tables")
 public class RestaurantTable extends BaseModel {
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "restaurant_id", nullable = false)
+    private Restaurant restaurant;
 
     @Column(name = "number_", unique = true)
     private int number;
@@ -27,13 +30,12 @@ public class RestaurantTable extends BaseModel {
     @OneToMany(mappedBy = "table", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings = new ArrayList<>();
 
-    @OneToOne(
+    @OneToMany(
+            mappedBy = "restaurantTable",
             cascade = CascadeType.ALL,
-            fetch = FetchType.LAZY,
-            optional = true
+            orphanRemoval = true
     )
-    @JoinColumn(name = "order_id")
-    private Order order;
+    private List<Order> orders = new ArrayList<>();
 
     public RestaurantTable() {
     }
@@ -94,11 +96,27 @@ public class RestaurantTable extends BaseModel {
         this.bookings = bookings;
     }
 
-    public Order getOrder() {
-        return order;
+    public Restaurant getRestaurant() {
+        return restaurant;
     }
 
-    public void setOrder(Order order) {
-        this.order = order;
+    public void setRestaurant(Restaurant restaurant) {
+        this.restaurant = restaurant;
+    }
+
+    public List<Order> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<Order> orders) {
+        this.orders = orders;
+    }
+
+    @Override
+    public String toString() {
+        return "RestaurantTable{" +
+                "number=" + number +
+                ", number of allowed people=" + capacity +
+                '}';
     }
 }

@@ -5,8 +5,6 @@ import com.restaurant.constants.BookingStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "bookings", indexes = @Index(columnList = "start_time"))
@@ -18,11 +16,11 @@ public class Booking extends BaseModel {
     @Column(nullable = false)
     private BookingDuration duration = BookingDuration.ONE_HOUR;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "table_id", nullable = false)
     private RestaurantTable table;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 

@@ -17,7 +17,14 @@ public class User extends BaseModel {
     @Column(nullable = false)
     private UserRole role;
 
-    public User() {}
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
+
+    @Column(nullable = false)
+    private boolean active = true;
+
+    public User() {
+    }
 
     public User(String username, String passwordHash, UserRole role) {
         this.username = username;
@@ -47,5 +54,21 @@ public class User extends BaseModel {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

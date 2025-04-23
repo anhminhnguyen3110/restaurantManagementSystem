@@ -1,11 +1,11 @@
 package com.restaurant.constants;
 
 public enum OrderItemStatus {
-    PENDING("Pending"),
-    PREPARING("Preparing"),
-    READY("Ready"),
-    SERVED("Served"),
-    CANCELLED("Cancelled");
+    PENDING("pending"),
+    PREPARING("preparing"),
+    READY("ready"),
+    SERVED("served"),
+    CANCELLED("cancelled");
 
     private final String status;
 
@@ -14,12 +14,12 @@ public enum OrderItemStatus {
     }
 
     public String getStatus() {
-        return status;
+        return status.toLowerCase().replace("_", " ");
     }
 
     @Override
     public String toString() {
-        return status;
+        return this.getStatus();
     }
 
     public static OrderItemStatus fromString(String status) {

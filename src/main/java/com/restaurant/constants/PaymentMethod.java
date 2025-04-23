@@ -1,10 +1,10 @@
 package com.restaurant.constants;
 
 public enum PaymentMethod {
-    CASH("Cash"),
-    CREDIT_CARD("Credit_Card"),
-    DIRECT_BANK_TRANSFER("Direct_Bank_Transfer"),
-    EWALLET("E_Wallet");
+    CASH("cash"),
+    CREDIT_CARD("credit_card"),
+    DIRECT_BANK_TRANSFER("direct_bank_transfer"),
+    EWALLET("e_wallet");
 
     private final String method;
 
@@ -13,12 +13,12 @@ public enum PaymentMethod {
     }
 
     public String getMethod() {
-        return method;
+        return method.toLowerCase().replace("_", " ");
     }
 
     @Override
     public String toString() {
-        return method;
+        return this.getMethod();
     }
 
     public static PaymentMethod fromString(String status) {

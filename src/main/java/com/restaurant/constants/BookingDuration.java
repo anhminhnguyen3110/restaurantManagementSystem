@@ -11,7 +11,10 @@ public enum BookingDuration {
     TWO_HOURS(120),
     TWO_AND_HALF_HOUR(150),
     THREE_HOURS(180),
-    THREE_AND_HALF_HOUR(210);
+    THREE_AND_HALF_HOUR(210),
+    FOUR_HOURS(240),
+    FOUR_AND_HALF_HOUR(270),
+    FIVE_HOURS(300);
 
     private final int minutes;
 
@@ -34,5 +37,14 @@ public enum BookingDuration {
     public static BookingDuration fromMinutes(int m) {
         for (BookingDuration d : values()) if (d.minutes == m) return d;
         throw new IllegalArgumentException("Unsupported duration " + m + " min");
+    }
+
+    @Override
+    public String toString() {
+        int h = minutes / 60;
+        int m = minutes % 60;
+        if (h == 0) return m + " min";
+        if (m == 0) return h + " h";
+        return h + " h " + m + " min";
     }
 }
