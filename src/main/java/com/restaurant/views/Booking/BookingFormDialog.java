@@ -1,73 +1,96 @@
 package com.restaurant.views.Booking;
 
-import com.restaurant.controllers.BookingController;
-import com.restaurant.daos.CustomerDAO;
-import com.restaurant.daos.RestaurantTableDAO;
-import com.restaurant.di.Injector;
-import com.restaurant.models.Booking;
-import com.restaurant.models.Customer;
-import com.restaurant.models.RestaurantTable;
-import com.restaurant.constants.BookingDuration;
 import com.restaurant.constants.BookingStatus;
-import com.restaurant.dtos.booking.GetBookingsDto;
+import com.restaurant.constants.BookingTimeSlot;
+import com.restaurant.controllers.BookingController;
+import com.restaurant.controllers.RestaurantController;
+import com.restaurant.controllers.RestaurantTableController;
+import com.restaurant.di.Injector;
+import com.restaurant.dtos.booking.CreateBookingDto;
+import com.restaurant.dtos.booking.UpdateBookingDto;
+import com.restaurant.dtos.restaurantTable.GetRestaurantTableForBookingDto;
+import com.restaurant.models.Booking;
+import com.restaurant.models.Restaurant;
+import com.restaurant.models.RestaurantTable;
+import com.restaurant.utils.validators.BookingInputValidator;
 import org.jdesktop.swingx.JXDatePicker;
 
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 
 public class BookingFormDialog extends JDialog {
-    private final JTextField phoneField = new JTextField(15);
-    private final JXDatePicker dpStart = new JXDatePicker();
-    private final JComboBox<String> cbStartTime;
-    private final JComboBox<BookingDuration> durationCombo = new JComboBox<>(BookingDuration.values());
+    private final JComboBox<Restaurant> restaurantCombo = new JComboBox<>();
+    private final JXDatePicker datePicker = new JXDatePicker();
+    private final JComboBox<BookingTimeSlot> startCombo = new JComboBox<>(BookingTimeSlot.values());
+    private final JComboBox<BookingTimeSlot> endCombo = new JComboBox<>(BookingTimeSlot.values());
     private final JComboBox<RestaurantTable> tableCombo = new JComboBox<>();
+    private final JTextField nameField = new JTextField(15);
+    private final JTextField phoneField = new JTextField(15);
+    private final JTextField emailField = new JTextField(15);
     private final JComboBox<BookingStatus> statusCombo = new JComboBox<>(BookingStatus.values());
     private final JButton btnSave = new JButton("Save");
     private final JButton btnCancel = new JButton("Cancel");
-    private final BookingController controller;
-    private final Booking booking;
+
+    private final BookingController bookingController;
+    private final RestaurantController restaurantController;
+    private final RestaurantTableController tableController;
+    private final Booking existing;
     private final Runnable onSaved;
 
-    public BookingFormDialog(Frame owner, BookingController controller, Booking booking, Runnable onSaved) {
-        super(owner, booking == null ? "New Booking" : "Edit Booking", true);
-        this.controller = controller;
-        this.booking = booking;
+    public BookingFormDialog(
+            Frame owner,
+            Booking existing,
+            Runnable onSaved
+    ) {
+        super(owner, existing == null ? "New Booking" : "Edit Booking", true);
+
+        this.bookingController = Injector.getInstance().getInstance(BookingController.class);
+        this.restaurantController = Injector.getInstance()
+                .getInstance(RestaurantController.class);
+        this.tableController = Injector.getInstance()
+                .getInstance(RestaurantTableController.class);
+        this.existing = existing;
         this.onSaved = onSaved;
 
-        String[] times = new String[48];
-        for (int i = 0; i < 48; i++) {
-            int h = i / 2;
-            int m = (i % 2) * 30;
-            times[i] = String.format("%02d:%02d", h, m);
-        }
-        cbStartTime = new JComboBox<>(times);
-
-        RestaurantTableDAO tableDao = Injector.getInstance().getInstance(RestaurantTableDAO.class);
-        List<RestaurantTable> tables = tableDao.findAll();
-        tables.forEach(tableCombo::addItem);
-        tableCombo.setRenderer(new DefaultListCellRenderer(){
-            @Override public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus){
+        List<Restaurant> restaurants = restaurantController.findAllRestaurants();
+        restaurants.forEach(restaurantCombo::addItem);
+        restaurantCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(
+                    JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus
+            ) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                setText(value == null ? "" : ((RestaurantTable)value).toString());
+                if (value instanceof Restaurant) {
+                    setText(((Restaurant) value).getName());
+                }
                 return this;
             }
         });
 
-        if (booking != null) {
-            phoneField.setText(booking.getCustomer().getPhoneNumber());
-            LocalDateTime start = booking.getStart();
-            dpStart.setDate(Date.from(start.atZone(ZoneId.systemDefault()).toInstant()));
-            String ts = String.format("%02d:%02d", start.getHour(), start.getMinute());
-            cbStartTime.setSelectedItem(ts);
-            durationCombo.setSelectedItem(booking.getDuration());
-            tableCombo.setSelectedItem(booking.getTable());
-            statusCombo.setSelectedItem(booking.getStatus());
+        tableCombo.setEnabled(false);
+        restaurantCombo.addActionListener(e -> refreshTables());
+        datePicker.addActionListener(e -> refreshTables());
+        startCombo.addActionListener(e -> refreshTables());
+        endCombo.addActionListener(e -> refreshTables());
+
+        if (existing != null) {
+            nameField.setText(existing.getCustomer().getName());
+            phoneField.setText(existing.getCustomer().getPhoneNumber());
+            emailField.setText(existing.getCustomer().getEmail());
+            datePicker.setDate(Date.from(
+                    existing.getDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
+            ));
+            startCombo.setSelectedItem(existing.getStartTime());
+            endCombo.setSelectedItem(existing.getEndTime());
+            restaurantCombo.setSelectedItem(existing.getTable().getRestaurant());
+            statusCombo.setSelectedItem(existing.getStatus());
+            SwingUtilities.invokeLater(
+                    () -> tableCombo.setSelectedItem(existing.getTable())
+            );
         }
 
         buildUI();
@@ -76,70 +99,136 @@ public class BookingFormDialog extends JDialog {
     }
 
     private void buildUI() {
-        JPanel form = new JPanel(new GridLayout(6,2,5,5));
-        form.add(new JLabel("Customer Phone:")); form.add(phoneField);
-        form.add(new JLabel("Start Date:"));      form.add(dpStart);
-        form.add(new JLabel("Start Time:"));      form.add(cbStartTime);
-        form.add(new JLabel("Duration:"));        form.add(durationCombo);
-        form.add(new JLabel("Table:"));           form.add(tableCombo);
-        form.add(new JLabel("Status:"));          form.add(statusCombo);
+        JPanel f = new JPanel(new GridLayout(9, 2, 5, 5));
+        f.add(new JLabel("Restaurant:"));
+        f.add(restaurantCombo);
+        f.add(new JLabel("Date:"));
+        f.add(datePicker);
+        f.add(new JLabel("Start:"));
+        f.add(startCombo);
+        f.add(new JLabel("End:"));
+        f.add(endCombo);
+        f.add(new JLabel("Table:"));
+        f.add(tableCombo);
+        f.add(new JLabel("Name:"));
+        f.add(nameField);
+        f.add(new JLabel("Phone:"));
+        if(existing == null) {
+            f.add(phoneField);
+        } else {
+            phoneField.setEnabled(false);
+        }
+        f.add(phoneField);
+        f.add(new JLabel("Email:"));
+        f.add(emailField);
+        if(existing != null) {
+            f.add(new JLabel("Status:"));
+            f.add(statusCombo);
+        }
 
-        JPanel buttons = new JPanel();
-        buttons.add(btnSave); buttons.add(btnCancel);
-
+        JPanel b = new JPanel();
+        b.add(btnSave);
+        b.add(btnCancel);
         btnSave.addActionListener(e -> onSave());
         btnCancel.addActionListener(e -> dispose());
 
-        getContentPane().add(form, BorderLayout.CENTER);
-        getContentPane().add(buttons, BorderLayout.SOUTH);
+        getContentPane().add(f, BorderLayout.CENTER);
+        getContentPane().add(b, BorderLayout.SOUTH);
+    }
+
+    private void refreshTables() {
+        Restaurant r = (Restaurant) restaurantCombo.getSelectedItem();
+        Date d = datePicker.getDate();
+        BookingTimeSlot s = (BookingTimeSlot) startCombo.getSelectedItem();
+        BookingTimeSlot e = (BookingTimeSlot) endCombo.getSelectedItem();
+        boolean ok = r != null && d != null && s != null && e != null && e.ordinal() > s.ordinal();
+        tableCombo.setEnabled(ok);
+        if (!ok) {
+            tableCombo.removeAllItems();
+            return;
+        }
+        GetRestaurantTableForBookingDto dto = new GetRestaurantTableForBookingDto();
+        dto.setRestaurantId(r.getId());
+        dto.setDate(d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+        dto.setStartTime(s);
+        dto.setEndTime(e);
+        List<RestaurantTable> ts = tableController.findTablesForBooking(dto);
+        tableCombo.removeAllItems();
+        ts.forEach(tableCombo::addItem);
     }
 
     private void onSave() {
-        try {
-            String phone = phoneField.getText().trim();
-            LocalDate date = dpStart.getDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            String[] parts = ((String)cbStartTime.getSelectedItem()).split(":");
-            LocalTime time = LocalTime.of(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
-            LocalDateTime start = LocalDateTime.of(date, time);
-            BookingDuration duration = (BookingDuration) durationCombo.getSelectedItem();
-            LocalDateTime end = start.plusMinutes(duration.getMinutes());
-            RestaurantTable table = (RestaurantTable) tableCombo.getSelectedItem();
-            BookingStatus status = (BookingStatus) statusCombo.getSelectedItem();
+        Date picked = datePicker.getDate();
+        if (picked == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "• Date is required.",
+                    "Validation Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+            return;
+        }
 
-            CustomerDAO custDao = Injector.getInstance().getInstance(CustomerDAO.class);
-            Customer c = custDao.findByPhoneNumber(phone);
-            if (c == null) {
-                JOptionPane.showMessageDialog(this, "No customer found with phone " + phone, "Validation", JOptionPane.ERROR_MESSAGE);
+        LocalDate date = picked.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
+
+        String name  = nameField.getText().trim(),
+                phone = phoneField.getText().trim(),
+                email = emailField.getText().trim();
+        BookingTimeSlot s = (BookingTimeSlot) startCombo.getSelectedItem(),
+                e = (BookingTimeSlot) endCombo.getSelectedItem();
+        RestaurantTable t = (RestaurantTable) tableCombo.getSelectedItem();
+        BookingStatus st = (BookingStatus) statusCombo.getSelectedItem();
+
+        if (existing == null) {
+            CreateBookingDto dto = new CreateBookingDto();
+            dto.setCustomerName(name);
+            dto.setCustomerPhoneNumber(phone);
+            dto.setCustomerEmail(email);
+            dto.setDate(date);
+            dto.setStartTime(s);
+            dto.setEndTime(e);
+            dto.setTableId(t != null ? t.getId() : 0);
+
+            List<String> errors = BookingInputValidator.validate(dto);
+            if (!errors.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        String.join("\n", errors),
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
                 return;
             }
+            bookingController.createBooking(dto);
 
-            GetBookingsDto dto = new GetBookingsDto();
-            dto.setTableNumber(table.getNumber());
-            dto.setFrom(start);
-            dto.setTo(end);
-            dto.setPage(0);
-            dto.setSize(Integer.MAX_VALUE);
-            List<Booking> conflicts = controller.findBookings(dto);
-            for (Booking b : conflicts) {
-                if (booking == null || b.getId() != booking.getId()) {
-                    JOptionPane.showMessageDialog(this, "Table " + table.getNumber() + " is already booked during selected time", "Validation", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
+        } else {
+            UpdateBookingDto dto = new UpdateBookingDto();
+            dto.setId(existing.getId());
+            dto.setCustomerName(name);
+            dto.setCustomerPhoneNumber(phone);
+            dto.setCustomerEmail(email);
+            dto.setDate(date);
+            dto.setStartTime(s);
+            dto.setEndTime(e);
+            dto.setTableId(t != null ? t.getId() : null);
+            dto.setStatus(st);
+
+            List<String> errors = BookingInputValidator.validate(dto);
+            if (!errors.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        String.join("\n", errors),
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                return;
             }
-
-            Booking b = booking == null ? new Booking() : controller.getBooking(booking.getId());
-            b.setCustomer(c);
-            b.setStart(start);
-            b.setDuration(duration);
-            b.setTable(table);
-            b.setStatus(status);
-
-            if (booking == null) controller.createBooking(b); else controller.updateBooking(b);
-
-            onSaved.run();
-            dispose();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Validation", JOptionPane.ERROR_MESSAGE);
+            bookingController.updateBooking(dto);
         }
+
+        onSaved.run();
+        dispose();
     }
 }

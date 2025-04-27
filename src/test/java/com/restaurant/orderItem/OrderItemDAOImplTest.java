@@ -37,7 +37,7 @@ class OrderItemDAOImplTest {
     @InjectMocks
     private OrderItemDAOImpl dao;
 
-    private final String findAllJpql = "SELECT oi FROM OrderItem oi";
+    private final String findJpql = "SELECT oi FROM OrderItem oi";
     private final String findByOrderJpql = "SELECT oi FROM OrderItem oi WHERE oi.order.id = :oid";
     private final String findByMenuItemJpql = "SELECT oi FROM OrderItem oi WHERE oi.menuItem.id = :mid";
     private final String findByStatusJpql = "SELECT oi FROM OrderItem oi WHERE oi.status = :st";
@@ -89,16 +89,16 @@ class OrderItemDAOImplTest {
     }
 
     @Test
-    void findAll_shouldQueryReturnListAndClose() {
+    void find_shouldQueryReturnListAndClose() {
         List<OrderItem> list = List.of(new OrderItem());
-        when(em.createQuery(findAllJpql, OrderItem.class)).thenReturn(typedQuery);
+        when(em.createQuery(findJpql, OrderItem.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<OrderItem> result = dao.findAll();
+        List<OrderItem> result = dao.find();
 
         assertEquals(list, result);
         verify(emf).createEntityManager();
-        verify(em).createQuery(findAllJpql, OrderItem.class);
+        verify(em).createQuery(findJpql, OrderItem.class);
         verify(typedQuery).getResultList();
         verify(em).close();
     }

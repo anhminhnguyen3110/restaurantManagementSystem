@@ -3,8 +3,8 @@ package com.restaurant.dtos;
 public class PaginationDto {
     private int page    = 0;
     private int size    = 20;
-    private String sortBy  = "start";
-    private String sortDir = "asc";
+    private String sortBy  = "updatedAt";
+    private String sortDir = "desc";
 
     public int getPage() {
         return page;

@@ -31,7 +31,7 @@ public class Shipment extends BaseModel {
     private ShipmentStatus status = ShipmentStatus.SHIPPING;
 
     @Column(unique = true)
-    private String trackingNumber;
+    private final String trackingNumber;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id", nullable = false)
@@ -82,10 +82,6 @@ public class Shipment extends BaseModel {
 
     public String getTrackingNumber() {
         return trackingNumber;
-    }
-
-    public void setTrackingNumber(String trackingNumber) {
-        this.trackingNumber = trackingNumber;
     }
 
     public Customer getCustomer() {

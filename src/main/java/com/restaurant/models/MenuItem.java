@@ -18,31 +18,14 @@ public class MenuItem extends BaseModel {
     @Column(nullable = false)
     private double price;
 
-    @Column(name = "available", nullable = false)
-    private boolean available = false;
-
     @OneToMany(mappedBy = "menuItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
-
-    @OneToMany(mappedBy = "menuItem", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MenuItemIngredient> ingredients = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "menu_id", nullable = false)
     private Menu menu;
 
     public MenuItem() {
-    }
-
-    public MenuItem(String name, String description, double price, boolean available) {
-        this.name = name;
-        this.description = description;
-        this.price = price;
-        this.available = available;
-    }
-
-    public List<MenuItemIngredient> getIngredients() {
-        return ingredients;
     }
 
     public String getName() {
@@ -69,14 +52,6 @@ public class MenuItem extends BaseModel {
         this.price = p;
     }
 
-    public boolean isAvailable() {
-        return available;
-    }
-
-    public void setAvailable(boolean a) {
-        this.available = a;
-    }
-
     public int getTotalOrderedCount() {
         return orderItems.stream()
                 .mapToInt(OrderItem::getQuantity)
@@ -89,10 +64,6 @@ public class MenuItem extends BaseModel {
 
     public void setOrderItems(List<OrderItem> orderItems) {
         this.orderItems = orderItems;
-    }
-
-    public void setIngredients(List<MenuItemIngredient> ingredients) {
-        this.ingredients = ingredients;
     }
 
     public Menu getMenu() {

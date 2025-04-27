@@ -1,7 +1,8 @@
 package com.restaurant.daos;
 
-import com.restaurant.models.Order;
 import com.restaurant.constants.OrderType;
+import com.restaurant.dtos.order.GetOrderDto;
+import com.restaurant.models.Order;
 
 import java.util.List;
 
@@ -10,15 +11,11 @@ public interface OrderDAO {
 
     Order getById(int id);
 
-    List<Order> findAll();
-
-    List<Order> findByStatus(String status);
-
-    List<Order> findByType(OrderType type);
-
-    List<Order> findByTable(int tableId);
+    List<Order> find(GetOrderDto dto);
 
     void update(Order order);
 
     void delete(int id);
+
+    boolean hasPendingForTableAndType(int tableId, OrderType type);
 }

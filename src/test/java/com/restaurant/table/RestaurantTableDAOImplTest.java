@@ -30,7 +30,7 @@ class RestaurantTableDAOImplTest {
     @InjectMocks
     private RestaurantTableDAOImpl dao;
 
-    private final String findAllJpql       = "SELECT t FROM RestaurantTable t";
+    private final String findJpql       = "SELECT t FROM RestaurantTable t";
     private final String findByNumberJpql  =
             "SELECT t FROM RestaurantTable t WHERE t.number = :number";
     private final String findByCapacityJpql =
@@ -83,17 +83,17 @@ class RestaurantTableDAOImplTest {
     }
 
     @Test
-    void findAll_shouldQueryReturnListAndClose() {
+    void find_shouldQueryReturnListAndClose() {
         List<RestaurantTable> list = List.of(new RestaurantTable(), new RestaurantTable());
-        when(em.createQuery(findAllJpql, RestaurantTable.class))
+        when(em.createQuery(findJpql, RestaurantTable.class))
                 .thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<RestaurantTable> result = dao.findAll();
+        List<RestaurantTable> result = dao.find();
 
         assertEquals(list, result);
         verify(emf).createEntityManager();
-        verify(em).createQuery(findAllJpql, RestaurantTable.class);
+        verify(em).createQuery(findJpql, RestaurantTable.class);
         verify(typedQuery).getResultList();
         verify(em).close();
     }

@@ -6,6 +6,9 @@ public class GetMenuDto extends PaginationDto {
     private String name;
     private String restaurantName;
 
+    public GetMenuDto() {
+    }
+
     public String getName() {
         return name;
     }

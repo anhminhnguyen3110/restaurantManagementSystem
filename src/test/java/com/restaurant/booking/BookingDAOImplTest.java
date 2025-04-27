@@ -2,11 +2,7 @@ package com.restaurant.booking;
 
 import com.restaurant.daos.impl.BookingDAOImpl;
 import com.restaurant.models.Booking;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.EntityTransaction;
-import jakarta.persistence.Query;
-import jakarta.persistence.TypedQuery;
+import jakarta.persistence.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,7 +39,7 @@ class BookingDAOImplTest {
 
     private final String findByPhoneJpql =
             "SELECT b FROM Booking b JOIN b.customer c WHERE c.phoneNumber = :phone";
-    private final String findAllJpql = "SELECT b FROM Booking b";
+    private final String findJpql = "SELECT b FROM Booking b";
     private final String nativeSql =
             "SELECT * FROM bookings b " +
                     "WHERE b.start_time < :to " +
@@ -121,16 +117,16 @@ class BookingDAOImplTest {
     }
 
     @Test
-    void findAll_shouldQueryReturnListAndClose() {
+    void find_shouldQueryReturnListAndClose() {
         List<Booking> list = List.of(new Booking());
-        when(em.createQuery(findAllJpql, Booking.class)).thenReturn(typedQuery);
+        when(em.createQuery(findJpql, Booking.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<Booking> result = dao.findAll();
+        List<Booking> result = dao.find();
 
         assertEquals(list, result);
         verify(emf).createEntityManager();
-        verify(em).createQuery(findAllJpql, Booking.class);
+        verify(em).createQuery(findJpql, Booking.class);
         verify(typedQuery).getResultList();
         verify(em).close();
     }

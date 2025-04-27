@@ -1,13 +1,13 @@
 package com.restaurant.models;
 
 import jakarta.persistence.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "menus")
 public class Menu extends BaseModel {
-
     @Column(nullable = false)
     private String name;
 
@@ -21,7 +21,8 @@ public class Menu extends BaseModel {
     @OneToMany(mappedBy = "menu", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MenuItem> items = new ArrayList<>();
 
-    public Menu() {}
+    public Menu() {
+    }
 
     public Menu(String name, Restaurant restaurant) {
         this.name = name;
@@ -60,5 +61,13 @@ public class Menu extends BaseModel {
     public void removeItem(MenuItem item) {
         items.remove(item);
         item.setMenu(null);
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

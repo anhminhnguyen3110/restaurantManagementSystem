@@ -8,6 +8,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.TypedQuery;
+
 import java.util.List;
 
 @Injectable
@@ -15,10 +16,8 @@ public class CustomerDAOImpl implements CustomerDAO {
     @Inject
     private EntityManagerFactory emf;
 
-    public CustomerDAOImpl() {}
-
-    public CustomerDAOImpl(EntityManagerFactory emf) {
-        this.emf = emf;
+    public CustomerDAOImpl() {
+        // Default constructor for DI
     }
 
     @Override
@@ -36,36 +35,11 @@ public class CustomerDAOImpl implements CustomerDAO {
     }
 
     @Override
-    public Customer getById(int id) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            return em.find(Customer.class, id);
-        } finally {
-            em.close();
-        }
-    }
-
-    @Override
-    public List<Customer> findAll() {
+    public List<Customer> find() {
         EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<Customer> q = em.createQuery("SELECT c FROM Customer c", Customer.class);
             return q.getResultList();
-        } finally {
-            em.close();
-        }
-    }
-
-    @Override
-    public Customer findByPhoneNumber(String phoneNumber) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<Customer> q = em.createQuery(
-                    "SELECT c FROM Customer c WHERE c.phoneNumber = :phone",
-                    Customer.class
-            );
-            q.setParameter("phone", phoneNumber);
-            return q.getResultStream().findFirst().orElse(null);
         } finally {
             em.close();
         }
@@ -86,16 +60,24 @@ public class CustomerDAOImpl implements CustomerDAO {
     }
 
     @Override
-    public void delete(int id) {
+    public Customer getByPhoneNumber(String phoneNumber) {
         EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
         try {
-            tx.begin();
-            Customer c = em.find(Customer.class, id);
-            if (c != null) em.remove(c);
-            tx.commit();
+            TypedQuery<Customer> q = em.createQuery(
+                    "SELECT c FROM Customer c WHERE c.phoneNumber = :phone", Customer.class);
+            q.setParameter("phone", phoneNumber);
+            return q.getResultStream().findFirst().orElse(null);
         } finally {
-            if (tx.isActive()) tx.rollback();
+            em.close();
+        }
+    }
+
+    @Override
+    public Customer getById(int id) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            return em.find(Customer.class, id);
+        } finally {
             em.close();
         }
     }

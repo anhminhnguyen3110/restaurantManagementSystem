@@ -7,13 +7,11 @@ import java.util.List;
 public interface CustomerDAO {
     void add(Customer customer);
 
-    Customer getById(int id);
-
-    List<Customer> findAll();
-
-    Customer findByPhoneNumber(String phoneNumber);
+    List<Customer> find();
 
     void update(Customer customer);
 
-    void delete(int id);
+    Customer getByPhoneNumber(String phoneNumber);
+
+    Customer getById(int id);
 }

@@ -2,7 +2,8 @@ package com.restaurant;
 
 import com.restaurant.di.Inject;
 import com.restaurant.di.Injector;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 

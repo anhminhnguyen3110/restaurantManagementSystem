@@ -1,7 +1,7 @@
 package com.restaurant.daos;
 
+import com.restaurant.dtos.orderItem.GetOrderItemDto;
 import com.restaurant.models.OrderItem;
-import com.restaurant.constants.OrderItemStatus;
 
 import java.util.List;
 
@@ -10,15 +10,11 @@ public interface OrderItemDAO {
 
     OrderItem getById(int id);
 
-    List<OrderItem> findAll();
-
-    List<OrderItem> findByOrder(int orderId);
-
-    List<OrderItem> findByMenuItem(int menuItemId);
-
-    List<OrderItem> findByStatus(OrderItemStatus status);
+    List<OrderItem> find(GetOrderItemDto dto);
 
     void update(OrderItem item);
 
     void delete(int id);
+
+    boolean existsByOrderAndMenuItem(int orderId, int menuItemId, String customization);
 }

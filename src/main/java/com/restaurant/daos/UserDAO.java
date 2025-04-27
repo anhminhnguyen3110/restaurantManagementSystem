@@ -1,7 +1,7 @@
 package com.restaurant.daos;
 
+import com.restaurant.dtos.user.GetUserDto;
 import com.restaurant.models.User;
-import com.restaurant.constants.UserRole;
 
 import java.util.List;
 
@@ -10,13 +10,13 @@ public interface UserDAO {
 
     User getById(int id);
 
-    List<User> findAll();
+    List<User> find(GetUserDto dto);
 
     User findByUsername(String username);
-
-    List<User> findByRole(UserRole role);
 
     void update(User user);
 
     void delete(int id);
+
+    boolean existsByUsername(String username);
 }

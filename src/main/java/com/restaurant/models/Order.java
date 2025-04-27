@@ -10,7 +10,6 @@ import java.util.List;
 @Entity
 @Table(name = "orders")
 public class Order extends BaseModel {
-
     @ManyToOne(
             cascade = CascadeType.ALL,
             fetch = FetchType.EAGER,

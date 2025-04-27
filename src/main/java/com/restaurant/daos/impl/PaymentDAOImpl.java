@@ -1,28 +1,26 @@
 package com.restaurant.daos.impl;
 
+import com.restaurant.constants.PaymentStatus;
 import com.restaurant.daos.PaymentDAO;
 import com.restaurant.di.Inject;
 import com.restaurant.di.Injectable;
+import com.restaurant.dtos.payment.GetPaymentDto;
 import com.restaurant.models.Payment;
-import com.restaurant.constants.PaymentMethod;
-import com.restaurant.constants.PaymentStatus;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Injectable
 public class PaymentDAOImpl implements PaymentDAO {
-    @Inject
-    private EntityManagerFactory emf;
+    @Inject private EntityManagerFactory emf;
 
     public PaymentDAOImpl() {
-    }
-
-    public PaymentDAOImpl(EntityManagerFactory emf) {
-        this.emf = emf;
+        // Default constructor for DI
     }
 
     @Override
@@ -50,10 +48,31 @@ public class PaymentDAOImpl implements PaymentDAO {
     }
 
     @Override
-    public List<Payment> findAll() {
+    public List<Payment> find(GetPaymentDto dto) {
         EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<Payment> q = em.createQuery("SELECT p FROM Payment p", Payment.class);
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Payment> cq = cb.createQuery(Payment.class);
+            Root<Payment> root = cq.from(Payment.class);
+            root.fetch("order", JoinType.LEFT);
+
+            List<Predicate> preds = new ArrayList<>();
+            if (dto.getOrderId() > 0) {
+                preds.add(cb.equal(root.get("order").get("id"), dto.getOrderId()));
+            }
+            if (dto.getMethod() != null) {
+                preds.add(cb.equal(root.get("method"), dto.getMethod()));
+            }
+            if (dto.getStatus() != null) {
+                preds.add(cb.equal(root.get("status"), dto.getStatus()));
+            }
+            if (!preds.isEmpty()) {
+                cq.where(preds.toArray(new Predicate[0]));
+            }
+
+            TypedQuery<Payment> q = em.createQuery(cq);
+            q.setFirstResult(dto.getPage() * dto.getSize());
+            q.setMaxResults(dto.getSize());
             return q.getResultList();
         } finally {
             em.close();
@@ -61,74 +80,17 @@ public class PaymentDAOImpl implements PaymentDAO {
     }
 
     @Override
-    public Payment findByOrderId(int orderId) {
+    public boolean existsByOrder(int orderId) {
         EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<Payment> q = em.createQuery(
-                    "SELECT p FROM Payment p WHERE p.order.id = :oid",
-                    Payment.class
-            ).setParameter("oid", orderId).setMaxResults(1);
-            return q.getResultStream().findFirst().orElse(null);
+            Long cnt = em.createQuery(
+                            "SELECT COUNT(p) FROM Payment p WHERE p.order.id = :oid AND p.status != :cancelStatus",
+                            Long.class)
+                    .setParameter("oid", orderId)
+                    .setParameter("cancelStatus", PaymentStatus.CANCELLED)
+                    .getSingleResult();
+            return cnt > 0;
         } finally {
-            em.close();
-        }
-    }
-
-    @Override
-    public List<Payment> findByStatus(PaymentStatus status) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<Payment> q = em.createQuery(
-                    "SELECT p FROM Payment p WHERE p.status = :st",
-                    Payment.class
-            );
-            q.setParameter("st", status);
-            return q.getResultList();
-        } finally {
-            em.close();
-        }
-    }
-
-    @Override
-    public List<Payment> findByMethod(PaymentMethod method) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<Payment> q = em.createQuery(
-                    "SELECT p FROM Payment p WHERE p.method = :mth",
-                    Payment.class
-            );
-            q.setParameter("mth", method);
-            return q.getResultList();
-        } finally {
-            em.close();
-        }
-    }
-
-    @Override
-    public void update(Payment payment) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.merge(payment);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
-        }
-    }
-
-    @Override
-    public void delete(int id) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            Payment p = em.find(Payment.class, id);
-            if (p != null) em.remove(p);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
             em.close();
         }
     }

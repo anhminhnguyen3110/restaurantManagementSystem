@@ -18,15 +18,12 @@
         <mapping class="com.restaurant.models.Customer" />
         <mapping class="com.restaurant.models.Menu" />
         <mapping class="com.restaurant.models.MenuItem"/>
-        <mapping class="com.restaurant.models.MenuItemIngredient" />
         <mapping class="com.restaurant.models.Order"/>
         <mapping class="com.restaurant.models.OrderItem" />
         <mapping class="com.restaurant.models.Payment"/>
         <mapping class="com.restaurant.models.Restaurant" />
         <mapping class="com.restaurant.models.RestaurantTable"/>
         <mapping class="com.restaurant.models.Shipment" />
-        <mapping class="com.restaurant.models.Stock" />
-        <mapping class="com.restaurant.models.Supplier" />
         <mapping class="com.restaurant.models.User" />
     </session-factory>
 </hibernate-configuration>

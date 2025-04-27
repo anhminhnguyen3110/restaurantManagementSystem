@@ -5,10 +5,16 @@ import com.restaurant.dtos.menuItem.GetMenuItemsDto;
 import com.restaurant.dtos.menuItem.UpdateMenuItemDto;
 import com.restaurant.models.MenuItem;
 
+import java.util.List;
+
 public interface MenuItemController {
     void createMenuItem(CreateMenuItemDto createMenuItemDto);
 
     void updateMenuItem(UpdateMenuItemDto updateMenuItemDto);
 
-    MenuItem findMenuItems(GetMenuItemsDto getMenuItemsDto);
+    List<MenuItem> findMenuItems(GetMenuItemsDto getMenuItemsDto);
+
+    void deleteMenuItem(int id);
+
+    MenuItem getMenuItem(int id);
 }

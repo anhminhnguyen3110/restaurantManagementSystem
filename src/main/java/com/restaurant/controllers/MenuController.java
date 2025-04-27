@@ -15,6 +15,6 @@ public interface MenuController {
     void deleteMenu(int id);
 
     List<Menu> findMenus(GetMenuDto getMenuDto);
-    
+
     Menu getMenu(int id);
 }

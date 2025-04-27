@@ -34,7 +34,7 @@ class MenuDAOImplTest {
     @InjectMocks
     private MenuDAOImpl dao;
 
-    private final String findAllJpql = "SELECT m FROM Menu m";
+    private final String findJpql = "SELECT m FROM Menu m";
     private final String findByRestJpql =
             "SELECT m FROM Menu m WHERE m.restaurant.id = :rid";
 
@@ -88,16 +88,16 @@ class MenuDAOImplTest {
     }
 
     @Test
-    void findAll_shouldQueryReturnListAndClose() {
+    void find_shouldQueryReturnListAndClose() {
         List<Menu> list = List.of(new Menu(), new Menu());
-        when(em.createQuery(findAllJpql, Menu.class)).thenReturn(typedQuery);
+        when(em.createQuery(findJpql, Menu.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<Menu> result = dao.findAll();
+        List<Menu> result = dao.find();
 
         assertEquals(list, result);
         verify(emf).createEntityManager();
-        verify(em).createQuery(findAllJpql, Menu.class);
+        verify(em).createQuery(findJpql, Menu.class);
         verify(typedQuery).getResultList();
         verify(em).close();
     }

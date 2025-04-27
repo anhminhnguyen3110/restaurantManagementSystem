@@ -39,7 +39,7 @@ class PaymentDAOImplTest {
     @InjectMocks
     private PaymentDAOImpl dao;
 
-    private final String findAllJpql      = "SELECT p FROM Payment p";
+    private final String findJpql      = "SELECT p FROM Payment p";
     private final String findByOrderJpql  = "SELECT p FROM Payment p WHERE p.order.id = :oid";
     private final String findByStatusJpql = "SELECT p FROM Payment p WHERE p.status = :st";
     private final String findByMethodJpql = "SELECT p FROM Payment p WHERE p.method = :mth";
@@ -91,16 +91,16 @@ class PaymentDAOImplTest {
     }
 
     @Test
-    void findAll_shouldQueryReturnListAndClose() {
+    void find_shouldQueryReturnListAndClose() {
         List<Payment> list = List.of(new Payment(), new Payment());
-        when(em.createQuery(findAllJpql, Payment.class)).thenReturn(typedQuery);
+        when(em.createQuery(findJpql, Payment.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<Payment> result = dao.findAll();
+        List<Payment> result = dao.find();
 
         assertEquals(list, result);
         verify(emf).createEntityManager();
-        verify(em).createQuery(findAllJpql, Payment.class);
+        verify(em).createQuery(findJpql, Payment.class);
         verify(typedQuery).getResultList();
         verify(em).close();
     }

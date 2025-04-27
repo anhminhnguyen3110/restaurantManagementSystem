@@ -1,5 +1,6 @@
 package com.restaurant.daos;
 
+import com.restaurant.dtos.restaurant.GetRestaurantDto;
 import com.restaurant.models.Restaurant;
 
 import java.util.List;
@@ -7,15 +8,15 @@ import java.util.List;
 public interface RestaurantDAO {
     void add(Restaurant restaurant);
 
-    Restaurant getById(int id);
+    List<Restaurant> find(GetRestaurantDto getRestaurantDto);
 
     List<Restaurant> findAll();
-
-    Restaurant findByName(String name);
-
-    List<Restaurant> findByAddress(String address);
 
     void update(Restaurant restaurant);
 
     void delete(int id);
+
+    Restaurant getById(int id);
+
+    boolean existsByNameAndAddress(String name, String address);
 }

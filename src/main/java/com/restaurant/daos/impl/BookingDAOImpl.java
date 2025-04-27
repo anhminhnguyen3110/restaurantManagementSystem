@@ -3,13 +3,14 @@ package com.restaurant.daos.impl;
 import com.restaurant.daos.BookingDAO;
 import com.restaurant.di.Inject;
 import com.restaurant.di.Injectable;
-import com.restaurant.models.Booking;
 import com.restaurant.dtos.booking.GetBookingsDto;
+import com.restaurant.models.Booking;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +18,10 @@ import java.util.List;
 public class BookingDAOImpl implements BookingDAO {
     @Inject
     private EntityManagerFactory emf;
+
+    public BookingDAOImpl() {
+        // Default constructor for DI
+    }
 
     @Override
     public void add(Booking booking) {
@@ -43,54 +48,65 @@ public class BookingDAOImpl implements BookingDAO {
     }
 
     @Override
-    public List<Booking> findAll(GetBookingsDto dto) {
+    public List<Booking> find(GetBookingsDto dto) {
         EntityManager em = emf.createEntityManager();
         try {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Booking> cq = cb.createQuery(Booking.class);
             Root<Booking> root = cq.from(Booking.class);
             root.fetch("customer", JoinType.LEFT);
-            Fetch<?,?> tableFetch = root.fetch("table", JoinType.LEFT);
-            tableFetch.fetch("restaurant", JoinType.LEFT);
+            root.fetch("table",    JoinType.LEFT);
 
             List<Predicate> preds = new ArrayList<>();
-            if (dto.getCustomerName()!=null && !dto.getCustomerName().isBlank()) {
-                preds.add(cb.like(cb.lower(root.get("customer").get("name")), "%" + dto.getCustomerName().toLowerCase() + "%"));
+            if (dto.getCustomerName() != null && !dto.getCustomerName().isBlank()) {
+                preds.add(cb.like(cb.lower(root.get("customer").get("name")),
+                        "%" + dto.getCustomerName().toLowerCase() + "%"));
             }
-            if (dto.getPhoneNumber()!=null && !dto.getPhoneNumber().isBlank()) {
-                preds.add(cb.like(cb.lower(root.get("customer").get("phoneNumber")), "%" + dto.getPhoneNumber().toLowerCase() + "%"));
+            if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().isBlank()) {
+                preds.add(cb.like(cb.lower(root.get("customer").get("phoneNumber")),
+                        "%" + dto.getPhoneNumber().toLowerCase() + "%"));
             }
-            if (dto.getTableNumber()!=null) {
-                preds.add(cb.equal(root.get("table").get("number"), dto.getTableNumber()));
+            if (dto.getTableNumber() != null) {
+                preds.add(cb.equal(root.get("table").get("number"),
+                        dto.getTableNumber()));
             }
-            if (dto.getStatus()!=null) {
-                preds.add(cb.equal(root.get("status"), dto.getStatus()));
+            if (dto.getStatus() != null) {
+                preds.add(cb.equal(root.get("status"),
+                        dto.getStatus()));
             }
-            if (dto.getFrom()!=null) {
-                preds.add(cb.greaterThanOrEqualTo(root.get("start"), dto.getFrom()));
+            if (dto.getDate() != null) {
+                preds.add(cb.equal(root.get("date"), dto.getDate()));
             }
-            if (dto.getTo()!=null) {
-                preds.add(cb.lessThanOrEqualTo(root.get("start"), dto.getTo()));
+            if (dto.getStartTime() != null) {
+                preds.add(cb.equal(root.get("startTime"), dto.getStartTime()));
+            }
+            if (dto.getEndTime() != null) {
+                preds.add(cb.equal(root.get("endTime"), dto.getEndTime()));
             }
             if (!preds.isEmpty()) {
                 cq.where(preds.toArray(new Predicate[0]));
             }
 
-            String sortBy = dto.getSortBy();
-            String dir = dto.getSortDir();
             Path<?> sortPath;
-            switch (sortBy) {
+            switch (dto.getSortBy()) {
+                case "date"       -> sortPath = root.get("date");
+                case "startTime"  -> sortPath = root.get("startTime");
+                case "endTime"    -> sortPath = root.get("endTime");
                 case "customer"   -> sortPath = root.get("customer").get("name");
                 case "phone"      -> sortPath = root.get("customer").get("phoneNumber");
-                case "restaurant" -> sortPath = root.get("table").get("restaurant").get("name");
+                case "restaurant"-> sortPath = root.get("table").get("restaurant").get("name");
                 case "table"      -> sortPath = root.get("table").get("number");
-                case "seats"      -> sortPath = root.get("table").get("capacity");
-                case "duration"   -> sortPath = root.get("duration");
-                case "start"      -> sortPath = root.get("start");
-                case "end"        -> sortPath = root.get("end");
-                default           -> sortPath = root.get("createdAt");
+                case "status"     -> sortPath = root.get("status");
+                default           -> sortPath = root.get("updatedAt");
             }
-            cq.orderBy("desc".equalsIgnoreCase(dir) ? cb.desc(sortPath) : cb.asc(sortPath));
+
+            cq.orderBy("desc".equalsIgnoreCase(dto.getSortDir())
+                    ? cb.desc(sortPath)
+                    : cb.asc(sortPath));
+
+            System.out.println("Sort by: " + dto.getSortBy());
+            System.out.println("Sort dir: " + dto.getSortDir());
+            System.out.println("Query: " + cq);
 
             TypedQuery<Booking> query = em.createQuery(cq);
             query.setFirstResult(dto.getPage() * dto.getSize());
@@ -122,7 +138,7 @@ public class BookingDAOImpl implements BookingDAO {
         try {
             tx.begin();
             Booking b = em.find(Booking.class, id);
-            if (b!=null) em.remove(b);
+            if (b != null) em.remove(b);
             tx.commit();
         } finally {
             if (tx.isActive()) tx.rollback();

@@ -1,14 +1,18 @@
 package com.restaurant.daos.impl;
 
+import com.restaurant.constants.OrderType;
 import com.restaurant.daos.OrderDAO;
 import com.restaurant.di.Inject;
 import com.restaurant.di.Injectable;
+import com.restaurant.dtos.order.GetOrderDto;
 import com.restaurant.models.Order;
-import com.restaurant.constants.OrderType;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Injectable
@@ -16,10 +20,8 @@ public class OrderDAOImpl implements OrderDAO {
     @Inject
     private EntityManagerFactory emf;
 
-    public OrderDAOImpl() {}
-
-    public OrderDAOImpl(EntityManagerFactory emf) {
-        this.emf = emf;
+    public OrderDAOImpl() {
+        // Default constructor for DI
     }
 
     @Override
@@ -47,55 +49,35 @@ public class OrderDAOImpl implements OrderDAO {
     }
 
     @Override
-    public List<Order> findAll() {
+    public List<Order> find(GetOrderDto dto) {
         EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<Order> q = em.createQuery("SELECT o FROM Order o", Order.class);
-            return q.getResultList();
-        } finally {
-            em.close();
-        }
-    }
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<Order> cq = cb.createQuery(Order.class);
+            Root<Order> root = cq.from(Order.class);
+            root.fetch("restaurantTable", JoinType.LEFT);
 
-    @Override
-    public List<Order> findByStatus(String status) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<Order> q = em.createQuery(
-                    "SELECT o FROM Order o WHERE o.status = :status",
-                    Order.class
-            );
-            q.setParameter("status", status);
-            return q.getResultList();
-        } finally {
-            em.close();
-        }
-    }
+            List<Predicate> preds = new ArrayList<>();
+            if (dto.getRestaurantTable() != null) {
+                preds.add(cb.equal(root.get("restaurantTable").get("id"),
+                        dto.getRestaurantTable().getId()));
+            }
+            if (dto.getOrderType() != null) {
+                preds.add(cb.equal(root.get("orderType"), dto.getOrderType()));
+            }
+            if (dto.getTotalPrice() > 0) {
+                preds.add(cb.equal(root.get("totalPrice"), dto.getTotalPrice()));
+            }
+            if (dto.getTotalItems() > 0) {
+                preds.add(cb.equal(root.get("totalItems"), dto.getTotalItems()));
+            }
+            if (!preds.isEmpty()) {
+                cq.where(preds.toArray(new Predicate[0]));
+            }
 
-    @Override
-    public List<Order> findByType(OrderType type) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<Order> q = em.createQuery(
-                    "SELECT o FROM Order o WHERE o.orderType = :type",
-                    Order.class
-            );
-            q.setParameter("type", type);
-            return q.getResultList();
-        } finally {
-            em.close();
-        }
-    }
-
-    @Override
-    public List<Order> findByTable(int tableId) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<Order> q = em.createQuery(
-                    "SELECT o FROM Order o WHERE o.restaurantTable.id = :tid",
-                    Order.class
-            );
-            q.setParameter("tid", tableId);
+            TypedQuery<Order> q = em.createQuery(cq);
+            q.setFirstResult(dto.getPage() * dto.getSize());
+            q.setMaxResults(dto.getSize());
             return q.getResultList();
         } finally {
             em.close();
@@ -127,6 +109,22 @@ public class OrderDAOImpl implements OrderDAO {
             tx.commit();
         } finally {
             if (tx.isActive()) tx.rollback();
+            em.close();
+        }
+    }
+
+    @Override
+    public boolean hasPendingForTableAndType(int tableId, OrderType type) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            Long cnt = em.createQuery(
+                            "SELECT COUNT(o) FROM Order o WHERE o.restaurantTable.id=:tid AND o.orderType=:t AND o.status='PENDING'",
+                            Long.class)
+                    .setParameter("tid", tableId)
+                    .setParameter("t", type)
+                    .getSingleResult();
+            return cnt > 0;
+        } finally {
             em.close();
         }
     }

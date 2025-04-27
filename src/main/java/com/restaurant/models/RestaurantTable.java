@@ -6,23 +6,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "restaurant_tables")
+@Table(
+        name = "restaurant_tables",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"restaurant_id", "start_x", "start_y"}),
+                @UniqueConstraint(columnNames = {"restaurant_id", "end_x", "end_y"}),
+                @UniqueConstraint(columnNames = {"restaurant_id", "table_number"})
+        },
+        indexes = {
+                @Index(name = "restaurant_idx", columnList = "restaurant_id"),
+        }
+)
 public class RestaurantTable extends BaseModel {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "restaurant_id", nullable = false)
     private Restaurant restaurant;
 
-    @Column(name = "number_", unique = true)
+    @Column(name = "table_number", nullable = false)
     private int number;
 
     @Column(name = "capacity", nullable = false)
     private int capacity;
 
-    @Column(name = "x", nullable = false)
-    private int x;
+    @Column(name = "start_x", nullable = false)
+    private int startX;
 
-    @Column(name = "y", nullable = false)
-    private int y;
+    @Column(name = "start_y", nullable = false)
+    private int startY;
+
+    @Column(name = "end_x", nullable = false)
+    private int endX;
+
+    @Column(name = "end_y", nullable = false)
+    private int endY;
 
     @Column(name = "available", nullable = false)
     private boolean available = true;
@@ -38,14 +54,6 @@ public class RestaurantTable extends BaseModel {
     private List<Order> orders = new ArrayList<>();
 
     public RestaurantTable() {
-    }
-
-    public RestaurantTable(int number, int capacity, int x, int y, boolean available) {
-        this.number = number;
-        this.capacity = capacity;
-        this.x = x;
-        this.y = y;
-        this.available = available;
     }
 
     public int getNumber() {
@@ -64,20 +72,36 @@ public class RestaurantTable extends BaseModel {
         this.capacity = capacity;
     }
 
-    public int getX() {
-        return x;
+    public int getStartX() {
+        return startX;
     }
 
-    public void setX(int x) {
-        this.x = x;
+    public void setStartX(int startX) {
+        this.startX = startX;
     }
 
-    public int getY() {
-        return y;
+    public int getStartY() {
+        return startY;
     }
 
-    public void setY(int y) {
-        this.y = y;
+    public void setStartY(int startY) {
+        this.startY = startY;
+    }
+
+    public int getEndX() {
+        return endX;
+    }
+
+    public void setEndX(int endX) {
+        this.endX = endX;
+    }
+
+    public int getEndY() {
+        return endY;
+    }
+
+    public void setEndY(int endY) {
+        this.endY = endY;
     }
 
     public boolean isAvailable() {
@@ -114,9 +138,9 @@ public class RestaurantTable extends BaseModel {
 
     @Override
     public String toString() {
-        return "RestaurantTable{" +
-                "number=" + number +
-                ", number of allowed people=" + capacity +
-                '}';
+        return "Table #" + number +
+                " (number of people: " + capacity +
+                ", restaurant: " + restaurant.getName() +
+                ")";
     }
 }

@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "users", indexes = @Index(columnList = "username", unique = true))
 public class User extends BaseModel {
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, updatable = false)
     private String username;
 
     @Column(nullable = false)

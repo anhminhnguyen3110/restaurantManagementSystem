@@ -5,6 +5,9 @@ public class CreateMenuDto {
     private String description;
     private int restaurantId;
 
+    public CreateMenuDto() {
+    }
+
     public String getName() {
         return name;
     }

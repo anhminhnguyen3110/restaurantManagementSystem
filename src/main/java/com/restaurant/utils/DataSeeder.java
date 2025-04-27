@@ -8,9 +8,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -27,17 +26,13 @@ public class DataSeeder {
 
     public void seed() {
         EntityManager em = emf.createEntityManager();
-        EntityTransaction transaction = em.getTransaction();
-
+        EntityTransaction tx = em.getTransaction();
         try {
-            transaction.begin();
+            tx.begin();
 
-            List<Supplier> suppliers = seedSuppliers(em);
-            List<Stock> stocks = seedStocks(em, suppliers);
             List<Restaurant> restaurants = seedRestaurants(em);
             List<Menu> menus = seedMenus(em, restaurants);
             List<MenuItem> menuItems = seedMenuItems(em, menus);
-            seedMenuItemIngredients(em, menuItems, stocks);
             List<RestaurantTable> tables = seedTables(em, restaurants);
 
             List<User> users = seedUsers(em);
@@ -49,44 +44,14 @@ public class DataSeeder {
             seedPayments(em, orders);
             seedShipments(em, orders, users, customers);
 
-            transaction.commit();
+            tx.commit();
             System.out.println("✔︎ Database seeded successfully");
         } catch (Exception e) {
-            if (transaction.isActive()) transaction.rollback();
+            if (tx.isActive()) tx.rollback();
             throw new RuntimeException("Seeding failed", e);
+        } finally {
+            em.close();
         }
-    }
-
-    private List<Supplier> seedSuppliers(EntityManager em) {
-        List<Supplier> suppliers = new ArrayList<>();
-        String[] names = {"Fresh Foods Co.", "Quality Meats Ltd.", "Dairy Direct", "Produce Partners", "Beverage World"};
-
-        for (String name : names) {
-            Supplier supplier = new Supplier();
-            supplier.setName(name);
-            supplier.setEmail(name.replaceAll("[^a-zA-Z]", "").toLowerCase() + "@example.com");
-            supplier.setPhone(String.format("555-%04d", random.nextInt(10000)));
-            supplier.setAddress("123 " + name + " Street");
-            em.persist(supplier);
-            suppliers.add(supplier);
-        }
-        return suppliers;
-    }
-
-    private List<Stock> seedStocks(EntityManager em, List<Supplier> suppliers) {
-        List<Stock> stocks = new ArrayList<>();
-        String[] items = {"Flour", "Sugar", "Butter", "Beef", "Chicken", "Milk", "Eggs", "Tomatoes", "Lettuce", "Coffee"};
-
-        for (String item : items) {
-            Stock stock = new Stock();
-            stock.setName(item);
-            stock.setQuantity(1000 + random.nextInt(5000));
-            stock.setMinThreshold(500);
-            stock.setSupplier(suppliers.get(random.nextInt(suppliers.size())));
-            em.persist(stock);
-            stocks.add(stock);
-        }
-        return stocks;
     }
 
     private List<Restaurant> seedRestaurants(EntityManager em) {
@@ -96,36 +61,38 @@ public class DataSeeder {
                 "Harbor View Grill",
                 "Mountain Peak Restaurant"
         };
-
-        RestaurantStatus [] statuses = RestaurantStatus.values();
+        RestaurantStatus[] statuses = RestaurantStatus.values();
+        final int defaultMaxX = 10, defaultMaxY = 10;
 
         for (int i = 0; i < names.length; i++) {
             Restaurant r = new Restaurant();
             r.setName(names[i]);
             r.setAddress("123 " + names[i] + " Street");
-            r.setStatus(statuses[i]);
+            r.setStatus(statuses[i % statuses.length]);
+
+            r.setMaxX(defaultMaxX);
+            r.setMaxY(defaultMaxY);
             em.persist(r);
             restaurants.add(r);
         }
-
         return restaurants;
     }
 
     private List<Menu> seedMenus(EntityManager em, List<Restaurant> restaurants) {
         List<Menu> menus = new ArrayList<>();
         String[] types = {"Main Menu", "Drinks Menu", "Dessert Menu"};
-
         for (Restaurant restaurant : restaurants) {
             for (String type : types) {
-                Menu m = new Menu(type + " - " + restaurant.getName(), restaurant);
+                Menu m = new Menu();
+                m.setName(type + " - " + restaurant.getName());
+                m.setRestaurant(restaurant);
                 em.persist(m);
-                restaurant.addMenu(m);
+                restaurant.getMenus().add(m);
                 menus.add(m);
             }
         }
         return menus;
     }
-
 
     private List<MenuItem> seedMenuItems(EntityManager em, List<Menu> menus) {
         List<MenuItem> items = new ArrayList<>();
@@ -133,76 +100,82 @@ public class DataSeeder {
                 "Steak", "Salmon", "Caesar Salad", "Burger", "Pizza",
                 "Pasta", "Ice Cream", "Coffee", "Wine", "Cheesecake"
         };
-
         for (Menu menu : menus) {
             for (String itemName : foodItems) {
                 MenuItem mi = new MenuItem();
                 mi.setName(itemName + " – " + menu.getName());
                 mi.setDescription("Delicious " + itemName);
                 mi.setPrice(5 + random.nextInt(30));
-                mi.setAvailable(true);
                 mi.setMenu(menu);
                 em.persist(mi);
-
-                menu.addItem(mi);
+                menu.getItems().add(mi);
                 items.add(mi);
             }
         }
         return items;
     }
 
-    private void seedMenuItemIngredients(EntityManager em,
-                                         List<MenuItem> items,
-                                         List<Stock> stocks) {
-        Random rnd = new Random();
-        IngredientUnit[] units = IngredientUnit.values();
-
-        for (MenuItem mi : items) {
-            Collections.shuffle(stocks, rnd);
-            int count = 2 + rnd.nextInt(3);
-            for (int i = 0; i < count; i++) {
-                Stock stock = stocks.get(i);
-
-                MenuItemIngredient ingr = new MenuItemIngredient();
-                ingr.setMenuItem(mi);
-                ingr.setStock(stock);
-                ingr.setQuantityRequired(50 + rnd.nextInt(150));
-                IngredientUnit unit = units[rnd.nextInt(units.length)];
-                ingr.setUnit(unit);
-                em.persist(ingr);
-            }
-        }
-    }
-
     private List<RestaurantTable> seedTables(EntityManager em, List<Restaurant> restaurants) {
         List<RestaurantTable> tables = new ArrayList<>();
         int[] capacities = {4, 8, 16};
-        int tableNumber = 1;
 
         for (Restaurant restaurant : restaurants) {
-            for (int i = 0; i < 100; i++) {
+            int maxX = restaurant.getMaxX();
+            int maxY = restaurant.getMaxY();
+
+            boolean[][] occupied = new boolean[maxY][maxX];
+
+            for (int tableNumber = 1; tableNumber <= 10; tableNumber++) {
+                int startX, startY, endX, endY;
+
+                do {
+                    startX = random.nextInt(maxX);
+                    startY = random.nextInt(maxY);
+
+                    int w = 1 + random.nextInt(3);
+                    int h = 1 + random.nextInt(3);
+
+                    endX = Math.min(maxX - 1, startX + w - 1);
+                    endY = Math.min(maxY - 1, startY + h - 1);
+
+                } while (regionOverlaps(occupied, startX, startY, endX, endY));
+
+                for (int y = startY; y <= endY; y++) {
+                    for (int x = startX; x <= endX; x++) {
+                        occupied[y][x] = true;
+                    }
+                }
+
                 RestaurantTable table = new RestaurantTable();
-                table.setNumber(tableNumber++);
-                table.setCapacity(capacities[random.nextInt(capacities.length)]);
-
-                table.setX(i % 10);
-                table.setY(i / 10);
-
-                table.setAvailable(true);
                 table.setRestaurant(restaurant);
+                table.setNumber(tableNumber);
+                table.setCapacity(capacities[random.nextInt(capacities.length)]);
+                table.setStartX(startX);
+                table.setStartY(startY);
+                table.setEndX(endX);
+                table.setEndY(endY);
+                table.setAvailable(true);
 
                 em.persist(table);
-                tables.add(table);
                 restaurant.getTables().add(table);
+                tables.add(table);
             }
         }
         return tables;
     }
 
+    private boolean regionOverlaps(boolean[][] occ, int sx, int sy, int ex, int ey) {
+        for (int y = sy; y <= ey; y++) {
+            for (int x = sx; x <= ex; x++) {
+                if (occ[y][x]) return true;
+            }
+        }
+        return false;
+    }
+
     private List<User> seedUsers(EntityManager em) {
         List<User> users = new ArrayList<>();
         UserRole[] roles = UserRole.values();
-
         for (int i = 1; i <= 10; i++) {
             User user = new User();
             user.setUsername("user" + i);
@@ -219,13 +192,13 @@ public class DataSeeder {
     private List<Customer> seedCustomers(EntityManager em) {
         List<Customer> customers = new ArrayList<>();
         for (int i = 1; i <= 10; i++) {
-            Customer customer = new Customer();
-            customer.setName("Customer " + i);
-            customer.setPhoneNumber(String.format("555-%04d", random.nextInt(10000)));
-            customer.setEmail("customer" + i + "@example.com");
-            customer.setAddress("456 Customer Street #" + i);
-            em.persist(customer);
-            customers.add(customer);
+            Customer c = new Customer();
+            c.setName("Customer " + i);
+            c.setPhoneNumber(String.format("555-%04d", random.nextInt(10000)));
+            c.setEmail("customer" + i + "@example.com");
+            c.setAddress("456 Customer Street #" + i);
+            em.persist(c);
+            customers.add(c);
         }
         return customers;
     }
@@ -233,17 +206,23 @@ public class DataSeeder {
     private List<Booking> seedBookings(EntityManager em, List<Customer> customers, List<RestaurantTable> tables) {
         List<Booking> bookings = new ArrayList<>();
         BookingStatus[] statuses = BookingStatus.values();
-        BookingDuration[] durations = BookingDuration.values();
-
+        BookingTimeSlot[] slots = BookingTimeSlot.values();
         for (int i = 0; i < 50; i++) {
-            Booking booking = new Booking();
-            booking.setStart(LocalDateTime.now().plusHours(random.nextInt(168)));
-            booking.setDuration(durations[random.nextInt(durations.length)]);
-            booking.setTable(tables.get(random.nextInt(tables.size())));
-            booking.setCustomer(customers.get(random.nextInt(customers.size())));
-            booking.setStatus(statuses[random.nextInt(statuses.length)]);
-            em.persist(booking);
-            bookings.add(booking);
+            Booking b = new Booking();
+
+            LocalDate date = LocalDate.now().plusDays(1 + random.nextInt(14));
+            b.setDate(date);
+
+            int startIdx = random.nextInt(slots.length - 1);
+            int maxOffset = slots.length - startIdx - 1;
+            int offset = 1 + random.nextInt(maxOffset);
+            b.setStartTime(slots[startIdx]);
+            b.setEndTime(slots[startIdx + offset]);
+            b.setTable(tables.get(random.nextInt(tables.size())));
+            b.setCustomer(customers.get(random.nextInt(customers.size())));
+            b.setStatus(statuses[random.nextInt(statuses.length)]);
+            em.persist(b);
+            bookings.add(b);
         }
         return bookings;
     }
@@ -251,36 +230,27 @@ public class DataSeeder {
     private List<Order> seedOrders(EntityManager em, List<RestaurantTable> tables, List<MenuItem> menuItems) {
         List<Order> orders = new ArrayList<>();
         OrderType[] types = OrderType.values();
-        OrderItemStatus[] orderItemStatuses = OrderItemStatus.values();
-        OrderStatus[] orderStatuses = OrderStatus.values();
-
-        Random rnd = new Random();
-
+        OrderItemStatus[] oiStatus = OrderItemStatus.values();
+        OrderStatus[] oStatus = OrderStatus.values();
         for (RestaurantTable table : tables) {
-            int ordersPerTable = 1 + rnd.nextInt(2);
-            for (int j = 0; j < ordersPerTable; j++) {
+            int perTable = 1 + random.nextInt(2);
+            for (int j = 0; j < perTable; j++) {
                 Order o = new Order();
                 o.setRestaurantTable(table);
-                o.setOrderType(types[rnd.nextInt(types.length)]);
-                OrderStatus os = orderStatuses[rnd.nextInt(orderStatuses.length)];
+                o.setOrderType(types[random.nextInt(types.length)]);
+                OrderStatus os = oStatus[random.nextInt(oStatus.length)];
                 o.setStatus(os);
-
-                int itemCount = 2 + rnd.nextInt(4);
+                int itemCount = 2 + random.nextInt(4);
                 for (int k = 0; k < itemCount; k++) {
-                    MenuItem mi = menuItems.get(rnd.nextInt(menuItems.size()));
+                    MenuItem mi = menuItems.get(random.nextInt(menuItems.size()));
                     OrderItem oi = new OrderItem();
                     oi.setMenuItem(mi);
-                    oi.setQuantity(1 + rnd.nextInt(3));
-
-                    if(os == OrderStatus.COMPLETED) {
-                        oi.setStatus(OrderItemStatus.SERVED);
-                    }
-                    else {
-                        oi.setStatus(orderItemStatuses[rnd.nextInt(orderItemStatuses.length)]);
-                    }
+                    oi.setQuantity(1 + random.nextInt(3));
+                    oi.setStatus(os == OrderStatus.COMPLETED
+                            ? OrderItemStatus.SERVED
+                            : oiStatus[random.nextInt(oiStatus.length)]);
                     o.addItem(oi);
                 }
-
                 em.persist(o);
                 orders.add(o);
             }
@@ -291,16 +261,15 @@ public class DataSeeder {
     private void seedPayments(EntityManager em, List<Order> orders) {
         PaymentMethod[] methods = PaymentMethod.values();
         PaymentStatus[] statuses = PaymentStatus.values();
-
         for (Order order : orders) {
-            Payment payment = new Payment();
-            payment.setOrder(order);
-            payment.setUserPayAmount(order.getTotalPrice() + random.nextInt(20));
-            payment.setChangeAmount(payment.getUserPayAmount() - order.getTotalPrice());
-            payment.setMethod(methods[random.nextInt(methods.length)]);
-            payment.setStatus(statuses[random.nextInt(statuses.length)]);
-            em.persist(payment);
-            order.setPayment(payment);
+            Payment p = new Payment();
+            p.setOrder(order);
+            p.setUserPayAmount(order.getTotalPrice() + random.nextInt(20));
+            p.setChangeAmount(p.getUserPayAmount() - order.getTotalPrice());
+            p.setMethod(methods[random.nextInt(methods.length)]);
+            p.setStatus(statuses[random.nextInt(statuses.length)]);
+            em.persist(p);
+            order.setPayment(p);
         }
     }
 
@@ -309,31 +278,27 @@ public class DataSeeder {
         List<User> shippers = users.stream()
                 .filter(u -> u.getRole() == UserRole.SHIPPER)
                 .toList();
-
         ShipmentStatus[] statuses = ShipmentStatus.values();
         ShipmentService[] services = ShipmentService.values();
-
         for (Order order : orders) {
-            ShipmentStatus status = statuses[random.nextInt(statuses.length)];
-            ShipmentService service = services[random.nextInt(services.length)];
-
-            if (status == ShipmentStatus.SUCCESS) {
+            ShipmentStatus ss = statuses[random.nextInt(statuses.length)];
+            ShipmentService svc = services[random.nextInt(services.length)];
+            if (ss == ShipmentStatus.SUCCESS) {
                 order.setStatus(OrderStatus.COMPLETED);
             } else {
                 order.setStatus(OrderStatus.PENDING);
             }
-
             if (order.getOrderType() == OrderType.DELIVERY) {
-                Shipment shipment = new Shipment();
-                shipment.setOrder(order);
-                shipment.setServiceType(service);
-                shipment.setStatus(status);
-                shipment.setCustomer(customers.get(random.nextInt(customers.size())));
-                if(service == ShipmentService.INTERNAL) {
-                    shipment.setShipper(shippers.get(random.nextInt(shippers.size())));
+                Shipment s = new Shipment();
+                s.setOrder(order);
+                s.setServiceType(svc);
+                s.setStatus(ss);
+                s.setCustomer(customers.get(random.nextInt(customers.size())));
+                if (svc == ShipmentService.INTERNAL && !shippers.isEmpty()) {
+                    s.setShipper(shippers.get(random.nextInt(shippers.size())));
                 }
-                em.persist(shipment);
-                order.setShipment(shipment);
+                em.persist(s);
+                order.setShipment(s);
             }
         }
     }

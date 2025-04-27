@@ -1,7 +1,15 @@
 package com.restaurant.controllers;
 
-public interface PaymentController {
-    void createPayment();
+import com.restaurant.dtos.payment.CreatePaymentDto;
+import com.restaurant.dtos.payment.GetPaymentDto;
+import com.restaurant.models.Payment;
 
-    void findPayments(String name);
+import java.util.List;
+
+public interface PaymentController {
+    void createPayment(CreatePaymentDto createPaymentDto);
+
+    List<Payment> findPayments(GetPaymentDto getPaymentDto);
+
+    Payment getPayment(int id);
 }

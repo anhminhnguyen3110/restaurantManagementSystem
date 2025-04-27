@@ -1,38 +1,49 @@
 package com.restaurant.dtos.booking;
 
-import com.restaurant.constants.BookingDuration;
+import com.restaurant.constants.BookingTimeSlot;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public class CreateBookingDto {
-    private LocalDateTime start;
-    private BookingDuration duration;
-    private Long tableId;
+    private LocalDate date;
+    private BookingTimeSlot startTime;
+    private BookingTimeSlot endTime;
+    private int tableId;
     private String customerName;
     private String customerPhoneNumber;
     private String customerEmail;
 
-    public LocalDateTime getStart() {
-        return start;
+    public CreateBookingDto() {}
+
+    public LocalDate getDate() {
+        return date;
     }
 
-    public void setStart(LocalDateTime start) {
-        this.start = start;
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 
-    public BookingDuration getDuration() {
-        return duration;
+    public BookingTimeSlot getStartTime() {
+        return startTime;
     }
 
-    public void setDuration(BookingDuration duration) {
-        this.duration = duration;
+    public void setStartTime(BookingTimeSlot startTime) {
+        this.startTime = startTime;
     }
 
-    public Long getTableId() {
+    public BookingTimeSlot getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(BookingTimeSlot endTime) {
+        this.endTime = endTime;
+    }
+
+    public int getTableId() {
         return tableId;
     }
 
-    public void setTableId(Long tableId) {
+    public void setTableId(int tableId) {
         this.tableId = tableId;
     }
 

@@ -1,23 +1,27 @@
 package com.restaurant.models;
 
-import com.restaurant.constants.BookingDuration;
 import com.restaurant.constants.BookingStatus;
+import com.restaurant.constants.BookingTimeSlot;
 import jakarta.persistence.*;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Entity
-@Table(name = "bookings", indexes = @Index(columnList = "start_time"))
+@Table(name = "bookings", indexes = @Index(columnList = "date"))
 public class Booking extends BaseModel {
-    @Column(name = "start_time", nullable = false, columnDefinition = "TIMESTAMP")
-    private LocalDateTime start;
+    @Column(nullable = false, columnDefinition = "DATE")
+    private LocalDate date;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private BookingDuration duration = BookingDuration.ONE_HOUR;
+    @Column(name = "start_time", length = 5, nullable = false)
+    private BookingTimeSlot startTime;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "end_time",   length = 5, nullable = false)
+    private BookingTimeSlot endTime;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "table_id", nullable = false)
+    @JoinColumn(name = "table_id",    nullable = false)
     private RestaurantTable table;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -28,41 +32,45 @@ public class Booking extends BaseModel {
     @Column(length = 20, nullable = false)
     private BookingStatus status = BookingStatus.BOOKED;
 
-    public Booking() {
+    public Booking() {}
+
+    public Booking(LocalDate date, BookingTimeSlot startTime, BookingTimeSlot endTime, RestaurantTable table) {
+        this.date      = date;
+        this.startTime = startTime;
+        this.endTime   = endTime;
+        this.table     = table;
     }
 
-    public Booking(LocalDateTime start, BookingDuration duration, RestaurantTable table) {
-        this.start = start;
-        this.duration = duration;
-        this.table = table;
+    public LocalDate getDate() {
+        return date;
     }
 
-    public LocalDateTime getStart() {
-        return start;
+    public void setDate(LocalDate date) {
+        this.date = date;
     }
 
-    public void setStart(LocalDateTime s) {
-        this.start = s;
+    public BookingTimeSlot getStartTime() {
+        return startTime;
     }
 
-    public BookingDuration getDuration() {
-        return duration;
+    public void setStartTime(BookingTimeSlot startTime) {
+        this.startTime = startTime;
     }
 
-    public void setDuration(BookingDuration d) {
-        this.duration = d;
+    public BookingTimeSlot getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(BookingTimeSlot endTime) {
+        this.endTime = endTime;
     }
 
     public RestaurantTable getTable() {
         return table;
     }
 
-    public void setTable(RestaurantTable t) {
-        this.table = t;
-    }
-
-    public LocalDateTime getEnd() {
-        return duration.addTo(start);
+    public void setTable(RestaurantTable table) {
+        this.table = table;
     }
 
     public Customer getCustomer() {

@@ -35,7 +35,7 @@ class CustomerDAOImplTest {
     @InjectMocks
     private CustomerDAOImpl dao;
 
-    private final String findAllJpql = "SELECT c FROM Customer c";
+    private final String findJpql = "SELECT c FROM Customer c";
     private final String findByPhoneJpql = "SELECT c FROM Customer c WHERE c.phoneNumber = :phone";
 
     @BeforeEach
@@ -89,16 +89,16 @@ class CustomerDAOImplTest {
     }
 
     @Test
-    void findAll_shouldQueryReturnListAndClose() {
+    void find_shouldQueryReturnListAndClose() {
         List<Customer> list = List.of(new Customer(), new Customer());
-        when(em.createQuery(findAllJpql, Customer.class)).thenReturn(typedQuery);
+        when(em.createQuery(findJpql, Customer.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<Customer> result = dao.findAll();
+        List<Customer> result = dao.find();
 
         assertEquals(list, result);
         verify(emf).createEntityManager();
-        verify(em).createQuery(findAllJpql, Customer.class);
+        verify(em).createQuery(findJpql, Customer.class);
         verify(typedQuery).getResultList();
         verify(em).close();
     }

@@ -1,15 +1,21 @@
 package com.restaurant.daos.impl;
 
+import com.restaurant.constants.UserRole;
 import com.restaurant.daos.UserDAO;
 import com.restaurant.di.Inject;
 import com.restaurant.di.Injectable;
+import com.restaurant.dtos.user.GetUserDto;
 import com.restaurant.models.User;
-import com.restaurant.constants.UserRole;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Injectable
@@ -18,10 +24,7 @@ public class UserDAOImpl implements UserDAO {
     private EntityManagerFactory emf;
 
     public UserDAOImpl() {
-    }
-
-    public UserDAOImpl(EntityManagerFactory emf) {
-        this.emf = emf;
+        // Default constructor for DI
     }
 
     @Override
@@ -49,10 +52,33 @@ public class UserDAOImpl implements UserDAO {
     }
 
     @Override
-    public List<User> findAll() {
+    public List<User> find(GetUserDto dto) {
         EntityManager em = emf.createEntityManager();
         try {
-            TypedQuery<User> q = em.createQuery("SELECT u FROM User u", User.class);
+            CriteriaBuilder cb = em.getCriteriaBuilder();
+            CriteriaQuery<User> cq = cb.createQuery(User.class);
+            Root<User> root = cq.from(User.class);
+
+            List<Predicate> preds = new ArrayList<>();
+            if (dto.getUsername() != null && !dto.getUsername().isBlank()) {
+                preds.add(cb.like(cb.lower(root.get("username")),
+                        "%" + dto.getUsername().toLowerCase() + "%"));
+            }
+            if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+                preds.add(cb.like(cb.lower(root.get("email")),
+                        "%" + dto.getEmail().toLowerCase() + "%"));
+            }
+            if (dto.getRole() != null && !dto.getRole().isBlank()) {
+                preds.add(cb.equal(root.get("role"), UserRole.valueOf(dto.getRole())));
+            }
+
+            if (!preds.isEmpty()) {
+                cq.where(preds.toArray(new Predicate[0]));
+            }
+
+            TypedQuery<User> q = em.createQuery(cq);
+            q.setFirstResult(dto.getPage() * dto.getSize());
+            q.setMaxResults(dto.getSize());
             return q.getResultList();
         } finally {
             em.close();
@@ -64,25 +90,11 @@ public class UserDAOImpl implements UserDAO {
         EntityManager em = emf.createEntityManager();
         try {
             TypedQuery<User> q = em.createQuery(
-                    "SELECT u FROM User u WHERE u.username = :username",
-                    User.class
-            ).setParameter("username", username).setMaxResults(1);
-            return q.getResultStream().findFirst().orElse(null);
-        } finally {
-            em.close();
-        }
-    }
-
-    @Override
-    public List<User> findByRole(UserRole role) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<User> q = em.createQuery(
-                    "SELECT u FROM User u WHERE u.role = :role",
-                    User.class
+                    "SELECT u FROM User u WHERE lower(u.username) = :un", User.class
             );
-            q.setParameter("role", role);
-            return q.getResultList();
+            q.setParameter("un", username.toLowerCase());
+            q.setMaxResults(1);
+            return q.getResultStream().findFirst().orElse(null);
         } finally {
             em.close();
         }
@@ -113,6 +125,21 @@ public class UserDAOImpl implements UserDAO {
             tx.commit();
         } finally {
             if (tx.isActive()) tx.rollback();
+            em.close();
+        }
+    }
+
+    @Override
+    public boolean existsByUsername(String username) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            Long count = em.createQuery(
+                            "SELECT COUNT(u) FROM User u WHERE lower(u.username) = :un", Long.class
+                    )
+                    .setParameter("un", username.toLowerCase())
+                    .getSingleResult();
+            return count > 0;
+        } finally {
             em.close();
         }
     }

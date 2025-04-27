@@ -38,7 +38,7 @@ class UserDAOImplTest {
     @InjectMocks
     private UserDAOImpl dao;
 
-    private final String findAllJpql = "SELECT u FROM User u";
+    private final String findJpql = "SELECT u FROM User u";
     private final String findByUsernameJpql = "SELECT u FROM User u WHERE u.username = :username";
     private final String findByRoleJpql = "SELECT u FROM User u WHERE u.role = :role";
 
@@ -89,16 +89,16 @@ class UserDAOImplTest {
     }
 
     @Test
-    void findAll_shouldQueryReturnListAndClose() {
+    void find_shouldQueryReturnListAndClose() {
         List<User> list = List.of(new User(), new User());
-        when(em.createQuery(findAllJpql, User.class)).thenReturn(typedQuery);
+        when(em.createQuery(findJpql, User.class)).thenReturn(typedQuery);
         when(typedQuery.getResultList()).thenReturn(list);
 
-        List<User> result = dao.findAll();
+        List<User> result = dao.find();
 
         assertEquals(list, result);
         verify(emf).createEntityManager();
-        verify(em).createQuery(findAllJpql, User.class);
+        verify(em).createQuery(findJpql, User.class);
         verify(typedQuery).getResultList();
         verify(em).close();
     }

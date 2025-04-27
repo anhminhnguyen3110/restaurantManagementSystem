@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "customers", indexes = @Index(columnList = "phoneNumber", unique = true))
+@Table(name = "customers", indexes = @Index(columnList = "phone_number", unique = true))
 public class Customer extends BaseModel {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, length = 15)
+    @Column(nullable = false, length = 15, unique = true, name = "phone_number", updatable = false)
     private String phoneNumber;
 
     @Column(length = 100)

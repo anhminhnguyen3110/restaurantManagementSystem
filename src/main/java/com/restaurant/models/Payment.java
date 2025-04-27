@@ -4,8 +4,6 @@ import com.restaurant.constants.PaymentMethod;
 import com.restaurant.constants.PaymentStatus;
 import jakarta.persistence.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "payments")
 public class Payment extends BaseModel {
@@ -23,19 +21,9 @@ public class Payment extends BaseModel {
     private PaymentMethod method;
 
     @Column(length = 10, nullable = false)
-    private PaymentStatus status;
-
-    @Column(name = "ts", columnDefinition = "TIMESTAMP")
-    private LocalDateTime timestamp = LocalDateTime.now();
+    private PaymentStatus status = PaymentStatus.COMPLETED;
 
     public Payment() {
-    }
-
-    public Payment(Order order, double amount, PaymentMethod method, PaymentStatus status) {
-        this.order = order;
-        this.changeAmount = amount;
-        this.method = method;
-        this.status = status;
     }
 
     public Order getOrder() {
@@ -60,14 +48,6 @@ public class Payment extends BaseModel {
 
     public void setStatus(PaymentStatus status) {
         this.status = status;
-    }
-
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(LocalDateTime t) {
-        this.timestamp = t;
     }
 
     public double getUserPayAmount() {

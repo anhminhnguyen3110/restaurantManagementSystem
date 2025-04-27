@@ -29,6 +29,12 @@ public class Restaurant extends BaseModel {
     )
     private List<RestaurantTable> tables = new ArrayList<>();
 
+    @Column(name = "max_x", nullable = false, updatable = false)
+    private int maxX;
+
+    @Column(name = "max_y", nullable = false, updatable = false)
+    private int maxY;
+
     public Restaurant() {
     }
 
@@ -85,5 +91,26 @@ public class Restaurant extends BaseModel {
 
     public void setTables(List<RestaurantTable> tables) {
         this.tables = tables;
+    }
+
+    public int getMaxX() {
+        return maxX;
+    }
+
+    public void setMaxX(int maxX) {
+        this.maxX = maxX;
+    }
+
+    public int getMaxY() {
+        return maxY;
+    }
+
+    public void setMaxY(int maxY) {
+        this.maxY = maxY;
+    }
+
+    @Override
+    public String toString(){
+        return this.getName();
     }
 }
