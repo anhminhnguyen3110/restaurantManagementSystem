@@ -19,4 +19,6 @@ public interface MenuItemDAO {
     boolean existsByName(String name);
 
     boolean existsByName(String name, Integer excludeId);
+
+    List<MenuItem> findByRestaurantId(int restaurantId);
 }

@@ -24,4 +24,6 @@ public interface RestaurantTableDAO {
     boolean existsByRestaurantIdAndEndPosition(int restaurantId, int endX, int endY, Integer excludeId);
 
     boolean existsByRestaurantIdAndNumber(int restaurantId, int number, Integer excludeId);
+
+    List<RestaurantTable> findTablesForOrder(int restaurantId);
 }

@@ -34,6 +34,9 @@ public class PaymentControllerImpl implements PaymentController {
         p.setOrder(order);
         p.setMethod(dto.getMethod());
         p.setUserPayAmount(dto.getUserPayAmount());
+        if (dto.getChangeAmount() > 0) {
+            p.setChangeAmount(dto.getChangeAmount());
+        }
         paymentDAO.add(p);
     }
 

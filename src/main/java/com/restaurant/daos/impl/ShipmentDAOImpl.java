@@ -77,7 +77,8 @@ public class ShipmentDAOImpl implements ShipmentDAO {
                 preds.add(cb.equal(root.get("status"), dto.getStatus()));
             }
             if (dto.getTrackingNumber() != null && !dto.getTrackingNumber().isBlank()) {
-                preds.add(cb.equal(root.get("trackingNumber"), dto.getTrackingNumber()));
+                preds.add(cb.like(cb.lower(root.get("trackingNumber")),
+                        "%" + dto.getTrackingNumber().toLowerCase() + "%"));
             }
             if (!preds.isEmpty()) {
                 cq.where(preds.toArray(new Predicate[0]));

@@ -1,5 +1,6 @@
 package com.restaurant.controllers.impl;
 
+import com.restaurant.constants.ShipmentService;
 import com.restaurant.controllers.ShipmentController;
 import com.restaurant.daos.CustomerDAO;
 import com.restaurant.daos.OrderDAO;
@@ -19,10 +20,14 @@ import java.util.List;
 
 @Injectable
 public class ShipmentControllerImpl implements ShipmentController {
-    @Inject private ShipmentDAO shipmentDAO;
-    @Inject private OrderDAO orderDAO;
-    @Inject private UserDAO userDAO;
-    @Inject private CustomerDAO customerDAO;
+    @Inject
+    private ShipmentDAO shipmentDAO;
+    @Inject
+    private OrderDAO orderDAO;
+    @Inject
+    private UserDAO userDAO;
+    @Inject
+    private CustomerDAO customerDAO;
 
     public ShipmentControllerImpl() {
         // Default constructor for DI
@@ -34,16 +39,22 @@ public class ShipmentControllerImpl implements ShipmentController {
             System.out.println("Pending shipment already exists for order " + dto.getOrderId());
             return;
         }
-        Order order      = orderDAO.getById(dto.getOrderId());
-        User shipper     = userDAO.getById(dto.getShipperId());
-        Customer customer= customerDAO.getById(dto.getCustomerId());
-
+        Order order = orderDAO.getById(dto.getOrderId());
+        User shipper = userDAO.getById(dto.getShipperId());
+        Customer customer = customerDAO.getByPhoneNumber(dto.getCustomerPhone());
+        if (customer == null) {
+            customer = new Customer();
+            customer.setName(dto.getCustomerName());
+            customer.setPhoneNumber(dto.getCustomerPhone());
+            customer.setEmail(dto.getCustomerEmail());
+            customer.setAddress(dto.getCustomerAddress());
+            customerDAO.add(customer);
+        }
         Shipment s = new Shipment();
         s.setServiceType(dto.getServiceType());
         s.setOrder(order);
         s.setShipper(shipper);
         s.setCustomer(customer);
-
         shipmentDAO.add(s);
     }
 
@@ -53,6 +64,27 @@ public class ShipmentControllerImpl implements ShipmentController {
         if (s == null) return;
         s.setServiceType(dto.getServiceType());
         s.setStatus(dto.getStatus());
+        Customer c = s.getCustomer();
+
+        if (dto.getCustomerAddress() != null) {
+            c.setAddress(dto.getCustomerAddress());
+        }
+
+        if (dto.getCustomerName() != null) {
+            c.setName(dto.getCustomerName());
+        }
+
+        if (dto.getCustomerEmail() != null) {
+            c.setEmail(dto.getCustomerEmail());
+        }
+
+        if (dto.getServiceType() == ShipmentService.INTERNAL) {
+            User shipper = userDAO.getById(dto.getShipperId());
+            s.setShipper(shipper);
+        } else {
+            s.setShipper(null);
+        }
+
         shipmentDAO.update(s);
     }
 
@@ -62,7 +94,7 @@ public class ShipmentControllerImpl implements ShipmentController {
     }
 
     @Override
-    public Shipment getShipment(int id) {
-        return shipmentDAO.getById(id);
+    public void deleteShipment(int id) {
+        shipmentDAO.delete(id);
     }
 }

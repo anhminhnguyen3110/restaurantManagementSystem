@@ -10,11 +10,9 @@ public interface RestaurantTableController {
 
     void updateTable(UpdateRestaurantTableDto updateRestaurantDto);
 
-    void deleteTable(int id);
-
     List<RestaurantTable> findTables(GetRestaurantTableDto getRestaurantTableDto);
 
     List<RestaurantTable> findTablesForBooking(GetRestaurantTableForBookingDto getRestaurantTableForBookingDto);
 
-    RestaurantTable getTable(int id);
+    List<RestaurantTable> findAllTablesForOrder(int restaurantId);
 }

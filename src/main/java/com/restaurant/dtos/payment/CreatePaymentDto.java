@@ -6,6 +6,7 @@ public class CreatePaymentDto {
     private int orderId;
     private PaymentMethod method;
     private double userPayAmount;
+    private double changeAmount;
 
     public int getOrderId() {
         return orderId;
@@ -29,5 +30,13 @@ public class CreatePaymentDto {
 
     public void setUserPayAmount(double userPayAmount) {
         this.userPayAmount = userPayAmount;
+    }
+
+    public double getChangeAmount() {
+        return changeAmount;
+    }
+
+    public void setChangeAmount(double changeAmount) {
+        this.changeAmount = changeAmount;
     }
 }

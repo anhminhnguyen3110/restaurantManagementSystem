@@ -2,10 +2,8 @@ package com.restaurant.constants;
 
 public enum OrderStatus {
     PENDING("pending"),
-    PREPARING("preparing"),
     READY("ready"),
     PROCESSED("processed"),
-    READY_FOR_PICKUP("ready_for_pickup"),
     COMPLETED("completed"),
     CANCELLED("cancelled");
 

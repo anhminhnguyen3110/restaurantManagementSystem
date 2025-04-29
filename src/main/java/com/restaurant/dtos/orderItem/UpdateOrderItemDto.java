@@ -2,7 +2,7 @@ package com.restaurant.dtos.orderItem;
 
 import com.restaurant.constants.OrderItemStatus;
 
-public class UpdateOrderItemDto {
+public class UpdateOrderItemDto extends CreateOrderItemDto {
     private int id;
     private OrderItemStatus status;
 

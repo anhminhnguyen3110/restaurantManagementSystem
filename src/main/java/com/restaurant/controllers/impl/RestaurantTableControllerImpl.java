@@ -92,11 +92,6 @@ public class RestaurantTableControllerImpl implements RestaurantTableController 
     }
 
     @Override
-    public void deleteTable(int id) {
-        restaurantTableDAO.delete(id);
-    }
-
-    @Override
     public List<RestaurantTable> findTables(GetRestaurantTableDto dto) {
         return restaurantTableDAO.find(dto);
     }
@@ -107,7 +102,7 @@ public class RestaurantTableControllerImpl implements RestaurantTableController 
     }
 
     @Override
-    public RestaurantTable getTable(int id) {
-        return restaurantTableDAO.getById(id);
+    public List<RestaurantTable> findAllTablesForOrder(int restaurantId) {
+        return restaurantTableDAO.findTablesForOrder(restaurantId);
     }
 }

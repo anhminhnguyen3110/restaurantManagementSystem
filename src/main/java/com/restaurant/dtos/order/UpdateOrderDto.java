@@ -3,19 +3,19 @@ package com.restaurant.dtos.order;
 import com.restaurant.constants.OrderStatus;
 
 public class UpdateOrderDto extends CreateOrderDto {
-    private int orderId;
+    private int id;
     private OrderStatus status = OrderStatus.PENDING;
 
     public UpdateOrderDto() {
         super();
     }
 
-    public int getOrderId() {
-        return orderId;
+    public int getId() {
+        return id;
     }
 
-    public void setOrderId(int orderId) {
-        this.orderId = orderId;
+    public void setId(int id) {
+        this.id = id;
     }
 
     public OrderStatus getStatus() {

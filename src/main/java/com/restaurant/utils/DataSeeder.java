@@ -38,7 +38,7 @@ public class DataSeeder {
             List<User> users = seedUsers(em);
             List<Customer> customers = seedCustomers(em);
 
-            List<Booking> bookings = seedBookings(em, customers, tables);
+            seedBookings(em, customers, tables);
             List<Order> orders = seedOrders(em, tables, menuItems);
 
             seedPayments(em, orders);
@@ -178,6 +178,7 @@ public class DataSeeder {
         UserRole[] roles = UserRole.values();
         for (int i = 1; i <= 10; i++) {
             User user = new User();
+            user.setName("User " + i);
             user.setUsername("user" + i);
             user.setPasswordHash("$2a$10$FAKEHASHFOREXAMPLEONLY");
             user.setRole(roles[random.nextInt(roles.length)]);
@@ -236,8 +237,12 @@ public class DataSeeder {
             int perTable = 1 + random.nextInt(2);
             for (int j = 0; j < perTable; j++) {
                 Order o = new Order();
-                o.setRestaurantTable(table);
                 o.setOrderType(types[random.nextInt(types.length)]);
+                if(o.getOrderType() == OrderType.DINE_IN) {
+                    continue;
+                } else {
+                    o.setRestaurant(table.getRestaurant());
+                }
                 OrderStatus os = oStatus[random.nextInt(oStatus.length)];
                 o.setStatus(os);
                 int itemCount = 2 + random.nextInt(4);

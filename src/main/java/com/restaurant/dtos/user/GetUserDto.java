@@ -1,11 +1,12 @@
 package com.restaurant.dtos.user;
 
+import com.restaurant.constants.UserRole;
 import com.restaurant.dtos.PaginationDto;
 
 public class GetUserDto extends PaginationDto {
     private String username;
     private String email;
-    private String role;
+    private UserRole role;
 
     public GetUserDto() {
     }
@@ -26,11 +27,11 @@ public class GetUserDto extends PaginationDto {
         this.email = email;
     }
 
-    public String getRole() {
+    public UserRole getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(UserRole role) {
         this.role = role;
     }
 }

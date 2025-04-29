@@ -18,4 +18,6 @@ public interface UserController {
     List<User> findUsers(GetUserDto getUserDto);
 
     User getUser(int id);
+
+    List<User> findAllShippers();
 }

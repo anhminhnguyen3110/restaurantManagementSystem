@@ -97,7 +97,7 @@ public class BookingDAOImpl implements BookingDAO {
                 case "restaurant"-> sortPath = root.get("table").get("restaurant").get("name");
                 case "table"      -> sortPath = root.get("table").get("number");
                 case "status"     -> sortPath = root.get("status");
-                default           -> sortPath = root.get("updatedAt");
+                default           -> sortPath = root.get("id");
             }
 
             cq.orderBy("desc".equalsIgnoreCase(dto.getSortDir())

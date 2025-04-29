@@ -56,7 +56,7 @@ public class OrderItemDAOImpl implements OrderItemDAO {
             CriteriaQuery<OrderItem> cq = cb.createQuery(OrderItem.class);
             Root<OrderItem> root = cq.from(OrderItem.class);
             root.fetch("order", JoinType.LEFT);
-            root.fetch("menuItem", JoinType.LEFT);
+            root.fetch("menuItem", JoinType.INNER);
 
             List<Predicate> preds = new ArrayList<>();
             if (dto.getId() > 0) {
@@ -66,24 +66,36 @@ public class OrderItemDAOImpl implements OrderItemDAO {
                 preds.add(cb.like(cb.lower(root.get("menuItem").get("name")),
                         "%" + dto.getMenuItemName().toLowerCase() + "%"));
             }
-            if (dto.getCustomization() != null && !dto.getCustomization().isBlank()) {
-                preds.add(cb.like(cb.lower(root.get("customization")),
-                        "%" + dto.getCustomization().toLowerCase() + "%"));
-            }
-            if (dto.getQuantity() > 0) {
-                preds.add(cb.equal(root.get("quantity"), dto.getQuantity()));
-            }
             if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
                 preds.add(cb.equal(root.get("status"),
                         OrderItemStatus.valueOf(dto.getStatus())));
             }
+            if (dto.getOrderId() > 0) {
+                preds.add(cb.equal(root.get("order").get("id"), dto.getOrderId()));
+            }
+            if (dto.getRestaurantId() > 0) {
+                preds.add(cb.equal(
+                        root.get("order").get("restaurant").get("id"),
+                        dto.getRestaurantId()
+                ));
+            }
             if (!preds.isEmpty()) {
                 cq.where(preds.toArray(new Predicate[0]));
+            }
+            if (dto.getSortBy() != null && !dto.getSortBy().isBlank()) {
+                if (dto.getSortDir() != null && dto.getSortDir().equalsIgnoreCase("desc")) {
+                    cq.orderBy(cb.desc(root.get(dto.getSortBy())));
+                } else {
+                    cq.orderBy(cb.asc(root.get(dto.getSortBy())));
+                }
+            } else {
+                cq.orderBy(cb.asc(root.get("id")));
             }
 
             TypedQuery<OrderItem> q = em.createQuery(cq);
             q.setFirstResult(dto.getPage() * dto.getSize());
             q.setMaxResults(dto.getSize());
+
             return q.getResultList();
         } finally {
             em.close();
@@ -96,13 +108,28 @@ public class OrderItemDAOImpl implements OrderItemDAO {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-            em.merge(item);
+            OrderItem managed = em.find(OrderItem.class, item.getId());
+            if (managed == null) {
+                throw new IllegalArgumentException("No OrderItem with id=" + item.getId());
+            }
+            if (item.getQuantity() != 0) {
+                managed.setQuantity(item.getQuantity());
+            }
+            if (item.getCustomization() != null) {
+                managed.setCustomization(item.getCustomization());
+            }
+            if (item.getStatus() != null) {
+                managed.setStatus(item.getStatus());
+            }
             tx.commit();
         } finally {
-            if (tx.isActive()) tx.rollback();
+            if (tx.isActive()) {
+                tx.rollback();
+            }
             em.close();
         }
     }
+
 
     @Override
     public void delete(int id) {

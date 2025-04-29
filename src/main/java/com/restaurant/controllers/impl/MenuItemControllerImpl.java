@@ -77,4 +77,10 @@ public class MenuItemControllerImpl implements MenuItemController {
     public MenuItem getMenuItem(int id) {
         return menuItemDAO.getById(id);
     }
+
+    @Override
+    public List<MenuItem> findMenuItemsByRestaurantId(int restaurantId) {
+        return menuItemDAO.findByRestaurantId(restaurantId);
+    }
+
 }

@@ -14,5 +14,5 @@ public interface ShipmentController {
 
     List<Shipment> findShipments(GetShipmentDto getShipmentDto);
 
-    Shipment getShipment(int id);
+    void deleteShipment(int id);
 }

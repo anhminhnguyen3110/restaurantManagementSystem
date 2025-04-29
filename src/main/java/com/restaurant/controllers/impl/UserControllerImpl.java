@@ -74,4 +74,9 @@ public class UserControllerImpl implements UserController {
     public User getUser(int id) {
         return userDAO.getById(id);
     }
+
+    @Override
+    public List<User> findAllShippers() {
+        return userDAO.findAllShippers();
+    }
 }

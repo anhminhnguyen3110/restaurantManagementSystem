@@ -170,4 +170,17 @@ public class RestaurantTableDAOImpl implements RestaurantTableDAO {
             em.close();
         }
     }
+
+    @Override
+    public List<RestaurantTable> findTablesForOrder(int restaurantId) {
+        var em = emf.createEntityManager();
+        try {
+            String jpql = "SELECT t FROM RestaurantTable t WHERE t.restaurant.id = :rid and t.available = true";
+            var q = em.createQuery(jpql, RestaurantTable.class);
+            q.setParameter("rid", restaurantId);
+            return q.getResultList();
+        } finally {
+            em.close();
+        }
+    }
 }

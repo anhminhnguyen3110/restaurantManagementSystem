@@ -37,8 +37,17 @@ public class Order extends BaseModel {
     @Column(length = 20, nullable = false)
     private OrderType orderType;
 
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval=true)
     private Shipment shipment;
+
+    @ManyToOne(
+            cascade = CascadeType.ALL,
+            fetch = FetchType.EAGER,
+            optional = false
+    )
+    @JoinColumn(name = "restaurant_id")
+    private Restaurant restaurant;
+
 
     public Order() {
     }
@@ -118,9 +127,11 @@ public class Order extends BaseModel {
         recalcTotal();
     }
 
-    public void removeItem(OrderItem item) {
-        items.remove(item);
-        item.setOrder(null);
-        recalcTotal();
+    public Restaurant getRestaurant() {
+        return restaurant;
+    }
+
+    public void setRestaurant(Restaurant restaurant) {
+        this.restaurant = restaurant;
     }
 }

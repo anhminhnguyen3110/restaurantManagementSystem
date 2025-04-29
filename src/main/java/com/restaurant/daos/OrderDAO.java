@@ -7,7 +7,7 @@ import com.restaurant.models.Order;
 import java.util.List;
 
 public interface OrderDAO {
-    void add(Order order);
+    Order add(Order order);
 
     Order getById(int id);
 
@@ -18,4 +18,6 @@ public interface OrderDAO {
     void delete(int id);
 
     boolean hasPendingForTableAndType(int tableId, OrderType type);
+
+    List<Order> findAll();
 }

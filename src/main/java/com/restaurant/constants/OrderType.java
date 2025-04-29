@@ -2,7 +2,6 @@ package com.restaurant.constants;
 
 public enum OrderType {
     DINE_IN("dine_in"),
-    TAKE_AWAY("take_away"),
     DELIVERY("delivery");
 
     private final String type;

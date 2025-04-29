@@ -23,6 +23,9 @@ public class User extends BaseModel {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(nullable = false)
+    private String name;
+
     public User() {
     }
 
@@ -70,5 +73,13 @@ public class User extends BaseModel {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

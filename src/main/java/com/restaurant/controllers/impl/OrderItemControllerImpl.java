@@ -23,7 +23,7 @@ public class OrderItemControllerImpl implements OrderItemController {
     private OrderDAO orderDAO;
     @Inject
     private MenuItemDAO menuItemDAO;
-    
+
     public OrderItemControllerImpl() {
         // Default constructor for DI
     }
@@ -43,13 +43,42 @@ public class OrderItemControllerImpl implements OrderItemController {
         oi.setMenuItem(mi);
         oi.setQuantity(dto.getQuantity());
         oi.setCustomization(dto.getCustomization());
+
+        order.setTotalPrice(
+                order.getTotalPrice() + (mi.getPrice() * dto.getQuantity())
+        );
+
+        orderDAO.update(order);
+
         orderItemDAO.add(oi);
     }
 
     @Override
     public void updateOrderItem(UpdateOrderItemDto dto) {
+        if (orderItemDAO.existsByOrderAndMenuItem(dto.getOrderId(),
+                dto.getMenuItemId(),
+                dto.getCustomization())) {
+            System.out.println("Duplicate order item for order " + dto.getOrderId());
+            return;
+        }
+
         OrderItem oi = orderItemDAO.getById(dto.getId());
         if (oi == null) return;
+
+        if(dto.getQuantity() != 0) {
+            Order order = oi.getOrder();
+
+            order.setTotalPrice(order.getTotalPrice() - oi.getQuantity()
+                    * oi.getMenuItem().getPrice());
+
+            oi.setQuantity(dto.getQuantity());
+
+            order.setTotalPrice(order.getTotalPrice() + oi.getQuantity()
+                    * oi.getMenuItem().getPrice());
+
+            orderDAO.update(order);
+        }
+
         oi.setStatus(dto.getStatus());
         orderItemDAO.update(oi);
     }
@@ -61,6 +90,12 @@ public class OrderItemControllerImpl implements OrderItemController {
 
     @Override
     public void deleteOrderItem(int id) {
+        OrderItem oi = orderItemDAO.getById(id);
+        if (oi == null) return;
+        Order order = oi.getOrder();
+        order.setTotalPrice(order.getTotalPrice() - oi.getQuantity()
+                * oi.getMenuItem().getPrice());
+        orderDAO.update(order);
         orderItemDAO.delete(id);
     }
 

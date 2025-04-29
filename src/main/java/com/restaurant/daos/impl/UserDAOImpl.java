@@ -68,10 +68,9 @@ public class UserDAOImpl implements UserDAO {
                 preds.add(cb.like(cb.lower(root.get("email")),
                         "%" + dto.getEmail().toLowerCase() + "%"));
             }
-            if (dto.getRole() != null && !dto.getRole().isBlank()) {
-                preds.add(cb.equal(root.get("role"), UserRole.valueOf(dto.getRole())));
+            if (dto.getRole() != null) {
+                preds.add(cb.equal(root.get("role"), dto.getRole()));
             }
-
             if (!preds.isEmpty()) {
                 cq.where(preds.toArray(new Predicate[0]));
             }
@@ -139,6 +138,20 @@ public class UserDAOImpl implements UserDAO {
                     .setParameter("un", username.toLowerCase())
                     .getSingleResult();
             return count > 0;
+        } finally {
+            em.close();
+        }
+    }
+
+    @Override
+    public List<User> findAllShippers() {
+        EntityManager em = emf.createEntityManager();
+        try {
+            TypedQuery<User> query = em.createQuery(
+                "SELECT u FROM User u WHERE u.role = :role", User.class
+            );
+            query.setParameter("role", UserRole.SHIPPER);
+            return query.getResultList();
         } finally {
             em.close();
         }

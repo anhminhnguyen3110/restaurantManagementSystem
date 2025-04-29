@@ -17,4 +17,6 @@ public interface MenuItemController {
     void deleteMenuItem(int id);
 
     MenuItem getMenuItem(int id);
+
+    List<MenuItem> findMenuItemsByRestaurantId(int restaurantId);
 }

@@ -160,4 +160,17 @@ public class MenuItemDAOImpl implements MenuItemDAO {
             em.close();
         }
     }
+
+    @Override
+    public List<MenuItem> findByRestaurantId(int restaurantId) {
+        EntityManager em = emf.createEntityManager();
+        try {
+            String jpql = "SELECT m FROM MenuItem m JOIN m.menu r WHERE r.restaurant.id = :restaurantId";
+            TypedQuery<MenuItem> q = em.createQuery(jpql, MenuItem.class)
+                    .setParameter("restaurantId", restaurantId);
+            return q.getResultList();
+        } finally {
+            em.close();
+        }
+    }
 }

@@ -1,14 +1,19 @@
 package com.restaurant.dtos.order;
 
+import com.restaurant.constants.OrderStatus;
 import com.restaurant.constants.OrderType;
 import com.restaurant.dtos.PaginationDto;
 import com.restaurant.models.RestaurantTable;
+
+import java.time.LocalDate;
 
 public class GetOrderDto extends PaginationDto {
     private RestaurantTable restaurantTable;
     private OrderType orderType;
     private double totalPrice;
-    private int totalItems;
+    private LocalDate date;
+    private OrderStatus status;
+    private int restaurantId;
 
     public GetOrderDto() {
         super();
@@ -38,11 +43,27 @@ public class GetOrderDto extends PaginationDto {
         this.totalPrice = totalPrice;
     }
 
-    public int getTotalItems() {
-        return totalItems;
+    public LocalDate getDate() {
+        return date;
     }
 
-    public void setTotalItems(int totalItems) {
-        this.totalItems = totalItems;
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(OrderStatus status) {
+        this.status = status;
+    }
+
+    public int getRestaurantId() {
+        return restaurantId;
+    }
+
+    public void setRestaurantId(int restaurantId) {
+        this.restaurantId = restaurantId;
     }
 }

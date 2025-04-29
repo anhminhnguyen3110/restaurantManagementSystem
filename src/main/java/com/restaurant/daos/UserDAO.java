@@ -19,4 +19,6 @@ public interface UserDAO {
     void delete(int id);
 
     boolean existsByUsername(String username);
+
+    List<User> findAllShippers();
 }

@@ -8,7 +8,7 @@ import com.restaurant.models.Order;
 import java.util.List;
 
 public interface OrderController {
-    void createOrder(CreateOrderDto createOrderDto);
+    Order createOrder(CreateOrderDto createOrderDto);
 
     void updateOrder(UpdateOrderDto updateOrderDto);
 

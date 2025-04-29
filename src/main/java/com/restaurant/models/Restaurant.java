@@ -29,6 +29,13 @@ public class Restaurant extends BaseModel {
     )
     private List<RestaurantTable> tables = new ArrayList<>();
 
+    @OneToMany(
+            mappedBy = "restaurant",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<RestaurantTable> restaurantTables = new ArrayList<>();
+
     @Column(name = "max_x", nullable = false, updatable = false)
     private int maxX;
 
@@ -107,6 +114,14 @@ public class Restaurant extends BaseModel {
 
     public void setMaxY(int maxY) {
         this.maxY = maxY;
+    }
+
+    public List<RestaurantTable> getRestaurantTables() {
+        return restaurantTables;
+    }
+
+    public void setRestaurantTables(List<RestaurantTable> restaurantTables) {
+        this.restaurantTables = restaurantTables;
     }
 
     @Override
