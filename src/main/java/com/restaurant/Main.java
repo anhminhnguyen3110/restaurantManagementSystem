@@ -119,7 +119,7 @@ public class Main {
         UserDAO userDAO = injector.getInstance(UserDAOImpl.class);
         injector.register(UserDAO.class, userDAO);
 
-        // Register the BookingController with its dependencies
+        // Register the Controllers with dependencies
         BookingController bookingController = injector.getInstance(BookingControllerImpl.class);
         injector.register(BookingController.class, bookingController);
 

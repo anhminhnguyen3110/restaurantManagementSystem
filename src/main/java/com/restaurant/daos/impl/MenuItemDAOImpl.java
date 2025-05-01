@@ -23,12 +23,6 @@ public class MenuItemDAOImpl implements MenuItemDAO {
         // Default constructor for DI
     }
 
-    public MenuItemDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public void add(MenuItem item) {
         try (EntityManager em = emf.createEntityManager()) {
@@ -58,7 +52,6 @@ public class MenuItemDAOImpl implements MenuItemDAO {
             CriteriaQuery<MenuItem> cq = cb.createQuery(MenuItem.class);
             Root<MenuItem> root = cq.from(MenuItem.class);
 
-            // fetch associations
             root.fetch("menu", JoinType.LEFT)
                     .fetch("restaurant", JoinType.LEFT);
             root.fetch("orderItems", JoinType.LEFT);
@@ -94,7 +87,6 @@ public class MenuItemDAOImpl implements MenuItemDAO {
                 cq.where(cb.and(preds.toArray(new Predicate[0])));
             }
 
-            // determine sort path (default to "id")
             Path<?> sortPath = root.get(
                     dto.getSortBy() != null && !dto.getSortBy().isBlank()
                             ? dto.getSortBy()

@@ -1,11 +1,12 @@
 package com.restaurant.dtos.orderItem;
 
+import com.restaurant.constants.OrderItemStatus;
 import com.restaurant.dtos.PaginationDto;
 
 public class GetOrderItemDto extends PaginationDto {
     private int id;
     private String menuItemName;
-    private String status;
+    private OrderItemStatus status;
     private int orderId;
     private int restaurantId;
 
@@ -29,11 +30,11 @@ public class GetOrderItemDto extends PaginationDto {
         this.menuItemName = menuItemName;
     }
 
-    public String getStatus() {
+    public OrderItemStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(OrderItemStatus status) {
         this.status = status;
     }
 

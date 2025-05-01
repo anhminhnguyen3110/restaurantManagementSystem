@@ -24,12 +24,6 @@ public class OrderItemDAOImpl implements OrderItemDAO {
         // Default constructor for DI
     }
 
-    public OrderItemDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public void add(OrderItem item) {
         try (EntityManager em = emf.createEntityManager()) {
@@ -71,10 +65,10 @@ public class OrderItemDAOImpl implements OrderItemDAO {
                         "%" + dto.getMenuItemName().toLowerCase() + "%"
                 ));
             }
-            if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
+            if (dto.getStatus() != null) {
                 preds.add(cb.equal(
                         root.get("status"),
-                        OrderItemStatus.valueOf(dto.getStatus())
+                        dto.getStatus()
                 ));
             }
             if (dto.getOrderId() > 0) {
@@ -93,7 +87,6 @@ public class OrderItemDAOImpl implements OrderItemDAO {
                 cq.where(cb.and(preds.toArray(new Predicate[0])));
             }
 
-            // determine sort path (default "id")
             Path<?> sortPath = root.get(
                     (dto.getSortBy() != null && !dto.getSortBy().isBlank())
                             ? dto.getSortBy()

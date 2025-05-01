@@ -24,12 +24,6 @@ public class PaymentDAOImpl implements PaymentDAO {
         // Default constructor for DI
     }
 
-    public PaymentDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public void add(Payment payment) {
         try (EntityManager em = emf.createEntityManager()) {

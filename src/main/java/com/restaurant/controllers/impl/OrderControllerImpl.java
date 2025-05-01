@@ -31,15 +31,7 @@ public class OrderControllerImpl implements OrderController {
     private ShipmentDAO shipmentDAO;
 
     public OrderControllerImpl() {
-    }
-
-    public OrderControllerImpl(OrderDAO orderDAO, RestaurantTableDAO tableDAO, RestaurantDAO restaurantDAO, ShipmentDAO shipmentDAO) {
-        // Testing purpose constructor
-        this();
-        this.orderDAO = orderDAO;
-        this.tableDAO = tableDAO;
-        this.restaurantDAO = restaurantDAO;
-        this.shipmentDAO = shipmentDAO;
+        // Default constructor for DI
     }
 
     @Override

@@ -28,14 +28,6 @@ public class OrderItemControllerImpl implements OrderItemController {
         // Default constructor for DI
     }
 
-    public OrderItemControllerImpl(OrderItemDAO orderItemDAO, OrderDAO orderDAO, MenuItemDAO menuItemDAO) {
-        // Testing purpose constructor
-        this();
-        this.orderItemDAO = orderItemDAO;
-        this.orderDAO = orderDAO;
-        this.menuItemDAO = menuItemDAO;
-    }
-
     @Override
     public void createOrderItem(CreateOrderItemDto dto) {
         if (orderItemDAO.existsByOrderAndMenuItem(dto.getOrderId(),

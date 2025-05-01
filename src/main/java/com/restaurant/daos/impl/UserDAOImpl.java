@@ -27,12 +27,6 @@ public class UserDAOImpl implements UserDAO {
         // Default constructor for DI
     }
 
-    public UserDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public void add(User user) {
         try (EntityManager em = emf.createEntityManager()) {

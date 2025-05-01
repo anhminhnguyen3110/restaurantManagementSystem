@@ -22,12 +22,6 @@ public class RestaurantTableDAOImpl implements RestaurantTableDAO {
         // Default constructor for DI
     }
 
-    public RestaurantTableDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public void add(RestaurantTable restaurantTable) {
         try (EntityManager em = emf.createEntityManager()) {
@@ -46,7 +40,6 @@ public class RestaurantTableDAOImpl implements RestaurantTableDAO {
     @Override
     public List<RestaurantTable> find(GetRestaurantTableDto dto) {
         try (EntityManager em = emf.createEntityManager()) {
-            System.out.println("Finding tables for restaurant ID: " + dto.getRestaurantId());
             TypedQuery<RestaurantTable> q = em.createQuery(
                     "SELECT t FROM RestaurantTable t WHERE t.restaurant.id = :rid",
                     RestaurantTable.class

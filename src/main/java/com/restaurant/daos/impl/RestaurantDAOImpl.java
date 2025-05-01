@@ -23,12 +23,6 @@ public class RestaurantDAOImpl implements RestaurantDAO {
         // Default constructor for DI
     }
 
-    public RestaurantDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public void add(Restaurant restaurant) {
         try (EntityManager em = emf.createEntityManager()) {

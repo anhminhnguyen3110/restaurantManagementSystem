@@ -30,14 +30,6 @@ public class BookingControllerImpl implements BookingController {
         // Default constructor for DI
     }
 
-    public BookingControllerImpl(BookingDAO bookingDAO, CustomerDAO customerDAO, RestaurantTableDAO tableDAO) {
-        // Testing purpose constructor
-        this();
-        this.bookingDAO = bookingDAO;
-        this.customerDAO = customerDAO;
-        this.tableDAO = tableDAO;
-    }
-
     @Override
     public void createBooking(CreateBookingDto dto) {
         LocalDate today = LocalDate.now();

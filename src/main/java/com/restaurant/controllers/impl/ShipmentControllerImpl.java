@@ -33,15 +33,6 @@ public class ShipmentControllerImpl implements ShipmentController {
         // Default constructor for DI
     }
 
-    public ShipmentControllerImpl(ShipmentDAO shipmentDAO, OrderDAO orderDAO, UserDAO userDAO, CustomerDAO customerDAO) {
-        // Testing purpose constructor
-        this();
-        this.shipmentDAO = shipmentDAO;
-        this.orderDAO = orderDAO;
-        this.userDAO = userDAO;
-        this.customerDAO = customerDAO;
-    }
-
     @Override
     public void createShipment(CreateShipmentDto dto) {
         if (shipmentDAO.existsPendingByOrder(dto.getOrderId())) {

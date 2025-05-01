@@ -25,13 +25,6 @@ public class RestaurantTableControllerImpl implements RestaurantTableController 
         // Default constructor for DI
     }
 
-    public RestaurantTableControllerImpl(RestaurantTableDAO restaurantTableDAO, RestaurantDAO restaurantDAO) {
-        // Testing purpose constructor
-        this();
-        this.restaurantTableDAO = restaurantTableDAO;
-        this.restaurantDAO = restaurantDAO;
-    }
-
     @Override
     public void createTable(CreateRestaurantTableDto dto) {
         if (restaurantTableDAO.existsByRestaurantIdAndStartPosition(

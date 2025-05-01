@@ -20,12 +20,6 @@ public class CustomerDAOImpl implements CustomerDAO {
         // Default constructor for DI
     }
 
-    public CustomerDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public void add(Customer customer) {
         try (EntityManager em = emf.createEntityManager()) {

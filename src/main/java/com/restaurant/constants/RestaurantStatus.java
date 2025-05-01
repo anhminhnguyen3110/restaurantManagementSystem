@@ -21,7 +21,7 @@ public enum RestaurantStatus {
     }
 
     public String getStatus() {
-        return status;
+        return status.toLowerCase().replace("_", " ");
     }
 
     @Override

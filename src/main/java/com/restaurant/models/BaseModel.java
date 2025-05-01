@@ -38,4 +38,9 @@ public abstract class BaseModel {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public void setId(int id) {
+        // Testing purpose only
+        this.id = id;
+    }
 }

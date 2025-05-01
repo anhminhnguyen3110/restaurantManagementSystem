@@ -167,7 +167,7 @@ public class OrderItemListView extends JPanel {
         String menuTxt = txtMenuFilter.getText().trim();
         dto.setMenuItemName(menuTxt.isEmpty() ? null : menuTxt);
         OrderItemStatus st = (OrderItemStatus) cbStatusFilter.getSelectedItem();
-        dto.setStatus(st == null ? null : st.name());
+        dto.setStatus(st);
         Restaurant selRest = (Restaurant) cbRestaurantFilter.getSelectedItem();
         dto.setRestaurantId(selRest == null ? 0 : selRest.getId());
         dto.setPage(0);

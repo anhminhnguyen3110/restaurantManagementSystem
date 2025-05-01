@@ -23,12 +23,6 @@ public class BookingDAOImpl implements BookingDAO {
         // Default constructor for DI
     }
 
-    public BookingDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public void add(Booking booking) {
         try (EntityManager em = emf.createEntityManager()) {

@@ -20,12 +20,6 @@ public class MenuDAOImpl implements MenuDAO {
         // Default constructor for DI
     }
 
-    public MenuDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public void add(Menu menu) {
         try (EntityManager em = emf.createEntityManager()) {

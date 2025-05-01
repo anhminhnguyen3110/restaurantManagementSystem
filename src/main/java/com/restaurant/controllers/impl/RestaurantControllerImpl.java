@@ -20,12 +20,6 @@ public class RestaurantControllerImpl implements RestaurantController {
         // Default constructor for DI
     }
 
-    public RestaurantControllerImpl(RestaurantDAO restaurantDAO) {
-        // Testing purpose constructor
-        this();
-        this.restaurantDAO = restaurantDAO;
-    }
-
     @Override
     public void createRestaurant(CreateRestaurantDto dto) {
         if (restaurantDAO.existsByNameAndAddress(dto.getName(), dto.getAddress())) {

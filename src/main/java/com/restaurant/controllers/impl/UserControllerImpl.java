@@ -22,12 +22,6 @@ public class UserControllerImpl implements UserController {
         // Default constructor for DI
     }
 
-    public UserControllerImpl(UserDAO userDAO) {
-        // Testing purpose constructor
-        this();
-        this.userDAO = userDAO;
-    }
-
     @Override
     public void createUser(CreateUserDto dto) {
         if (userDAO.existsByUsername(dto.getUsername())) {

@@ -24,12 +24,6 @@ public class ShipmentDAOImpl implements ShipmentDAO {
         // Default constructor for DI
     }
 
-    public ShipmentDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public void add(Shipment shipment) {
         try (EntityManager em = emf.createEntityManager()) {

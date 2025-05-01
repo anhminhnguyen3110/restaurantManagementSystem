@@ -25,13 +25,6 @@ public class MenuItemControllerImpl implements MenuItemController {
         // Default constructor for DI
     }
 
-    public MenuItemControllerImpl(MenuItemDAO menuItemDAO, MenuDAO menuDAO) {
-        // Testing purpose constructor
-        this();
-        this.menuItemDAO = menuItemDAO;
-        this.menuDAO = menuDAO;
-    }
-
     @Override
     public void createMenuItem(CreateMenuItemDto dto) {
         if (menuItemDAO.existsByName(dto.getName())) {

@@ -25,12 +25,6 @@ public class OrderDAOImpl implements OrderDAO {
         // Default constructor for DI
     }
 
-    public OrderDAOImpl(EntityManagerFactory emf) {
-        // Testing-purpose constructor
-        this();
-        this.emf = emf;
-    }
-
     @Override
     public Order add(Order order) {
         try (EntityManager em = emf.createEntityManager()) {

@@ -6,7 +6,7 @@ import com.restaurant.controllers.PaymentController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.payment.CreatePaymentDto;
 import com.restaurant.models.Order;
-import com.restaurant.utils.listeners.SimpleDocumentListener;
+import com.restaurant.views.listeners.SimpleDocumentListener;
 import com.restaurant.utils.validators.PaymentInputValidator;
 
 import javax.swing.*;
