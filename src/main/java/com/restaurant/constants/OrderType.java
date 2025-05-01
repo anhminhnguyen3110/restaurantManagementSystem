@@ -10,15 +10,6 @@ public enum OrderType {
         this.type = type;
     }
 
-    public String getType() {
-        return type.toLowerCase().replace("_", " ");
-    }
-
-    @Override
-    public String toString() {
-        return this.getType();
-    }
-
     public static OrderType fromString(String status) {
         for (OrderType orderType : OrderType.values()) {
             if (orderType.type.equalsIgnoreCase(status)) {
@@ -26,5 +17,14 @@ public enum OrderType {
             }
         }
         throw new IllegalArgumentException("No constant with text " + status + " found");
+    }
+
+    public String getType() {
+        return type.toLowerCase().replace("_", " ");
+    }
+
+    @Override
+    public String toString() {
+        return this.getType();
     }
 }

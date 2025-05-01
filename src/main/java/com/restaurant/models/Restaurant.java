@@ -125,7 +125,7 @@ public class Restaurant extends BaseModel {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return this.getName();
     }
 }

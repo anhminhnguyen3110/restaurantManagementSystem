@@ -6,7 +6,10 @@ import com.restaurant.di.Injectable;
 import com.restaurant.dtos.restaurantTable.GetRestaurantTableDto;
 import com.restaurant.dtos.restaurantTable.GetRestaurantTableForBookingDto;
 import com.restaurant.models.RestaurantTable;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.TypedQuery;
 
 import java.util.List;
 
@@ -19,41 +22,46 @@ public class RestaurantTableDAOImpl implements RestaurantTableDAO {
         // Default constructor for DI
     }
 
+    public RestaurantTableDAOImpl(EntityManagerFactory emf) {
+        // Testing-purpose constructor
+        this();
+        this.emf = emf;
+    }
+
     @Override
     public void add(RestaurantTable restaurantTable) {
-        var em = emf.createEntityManager();
-        var tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.persist(restaurantTable);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.persist(restaurantTable);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public List<RestaurantTable> find(GetRestaurantTableDto dto) {
-        var em = emf.createEntityManager();
-        System.out.println("Finding tables for restaurant ID: " + dto.getRestaurantId());
-        try {
-            var q = em.createQuery(
+        try (EntityManager em = emf.createEntityManager()) {
+            System.out.println("Finding tables for restaurant ID: " + dto.getRestaurantId());
+            TypedQuery<RestaurantTable> q = em.createQuery(
                     "SELECT t FROM RestaurantTable t WHERE t.restaurant.id = :rid",
                     RestaurantTable.class
             );
             q.setParameter("rid", dto.getRestaurantId());
             return q.getResultList();
-        } finally {
-            em.close();
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error finding restaurant tables", e);
         }
     }
 
     @Override
     public List<RestaurantTable> findForBooking(GetRestaurantTableForBookingDto dto) {
-        var em = emf.createEntityManager();
-        try {
-            var jpql = """
+        try (EntityManager em = emf.createEntityManager()) {
+            String jpql = """
                     SELECT t
                       FROM RestaurantTable t
                      WHERE t.restaurant.id = :rid
@@ -65,63 +73,62 @@ public class RestaurantTableDAOImpl implements RestaurantTableDAO {
                             AND b.endTime > :startTime
                        )
                     """;
-            var q = em.createQuery(jpql, RestaurantTable.class);
-            q.setParameter("rid", dto.getRestaurantId());
-            q.setParameter("date", dto.getDate());
-            q.setParameter("startTime", dto.getStartTime());
-            q.setParameter("endTime", dto.getEndTime());
+            TypedQuery<RestaurantTable> q = em.createQuery(jpql, RestaurantTable.class)
+                    .setParameter("rid", dto.getRestaurantId())
+                    .setParameter("date", dto.getDate())
+                    .setParameter("startTime", dto.getStartTime())
+                    .setParameter("endTime", dto.getEndTime());
             return q.getResultList();
-        } finally {
-            em.close();
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error finding tables for booking", e);
         }
     }
 
     @Override
     public RestaurantTable getById(int id) {
-        var em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             return em.find(RestaurantTable.class, id);
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public void update(RestaurantTable restaurantTable) {
-        var em = emf.createEntityManager();
-        var tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.merge(restaurantTable);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.merge(restaurantTable);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public void delete(int id) {
-        var em = emf.createEntityManager();
-        var tx = em.getTransaction();
-        try {
-            tx.begin();
-            var t = em.find(RestaurantTable.class, id);
-            if (t != null) em.remove(t);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                RestaurantTable t = em.find(RestaurantTable.class, id);
+                if (t != null) em.remove(t);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public boolean existsByRestaurantIdAndStartPosition(int restaurantId, int startX, int startY, Integer excludeId) {
-        var em = emf.createEntityManager();
-        try {
-            String jpql = "SELECT COUNT(t) FROM RestaurantTable t WHERE t.restaurant.id = :rid AND t.startX = :startX AND t.startY = :startY"
-                    + (excludeId != null ? " AND t.id <> :eid" : "");
-            var q = em.createQuery(jpql, Long.class)
+        try (EntityManager em = emf.createEntityManager()) {
+            String jpql = "SELECT COUNT(t) FROM RestaurantTable t " +
+                    "WHERE t.restaurant.id = :rid AND t.startX = :startX AND t.startY = :startY" +
+                    (excludeId != null ? " AND t.id <> :eid" : "");
+            TypedQuery<Long> q = em.createQuery(jpql, Long.class)
                     .setParameter("rid", restaurantId)
                     .setParameter("startX", startX)
                     .setParameter("startY", startY);
@@ -129,18 +136,16 @@ public class RestaurantTableDAOImpl implements RestaurantTableDAO {
                 q.setParameter("eid", excludeId);
             }
             return q.getSingleResult() > 0;
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public boolean existsByRestaurantIdAndEndPosition(int restaurantId, int endX, int endY, Integer excludeId) {
-        var em = emf.createEntityManager();
-        try {
-            String jpql = "SELECT COUNT(t) FROM RestaurantTable t WHERE t.restaurant.id = :rid AND t.endX = :endX AND t.endY = :endY"
-                    + (excludeId != null ? " AND t.id <> :eid" : "");
-            var q = em.createQuery(jpql, Long.class)
+        try (EntityManager em = emf.createEntityManager()) {
+            String jpql = "SELECT COUNT(t) FROM RestaurantTable t " +
+                    "WHERE t.restaurant.id = :rid AND t.endX = :endX AND t.endY = :endY" +
+                    (excludeId != null ? " AND t.id <> :eid" : "");
+            TypedQuery<Long> q = em.createQuery(jpql, Long.class)
                     .setParameter("rid", restaurantId)
                     .setParameter("endX", endX)
                     .setParameter("endY", endY);
@@ -148,39 +153,34 @@ public class RestaurantTableDAOImpl implements RestaurantTableDAO {
                 q.setParameter("eid", excludeId);
             }
             return q.getSingleResult() > 0;
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public boolean existsByRestaurantIdAndNumber(int restaurantId, int number, Integer excludeId) {
-        var em = emf.createEntityManager();
-        try {
-            String jpql = "SELECT COUNT(t) FROM RestaurantTable t WHERE t.restaurant.id = :rid AND t.number = :num"
-                    + (excludeId != null ? " AND t.id <> :eid" : "");
-            var q = em.createQuery(jpql, Long.class)
+        try (EntityManager em = emf.createEntityManager()) {
+            String jpql = "SELECT COUNT(t) FROM RestaurantTable t " +
+                    "WHERE t.restaurant.id = :rid AND t.number = :num" +
+                    (excludeId != null ? " AND t.id <> :eid" : "");
+            TypedQuery<Long> q = em.createQuery(jpql, Long.class)
                     .setParameter("rid", restaurantId)
                     .setParameter("num", number);
             if (excludeId != null) {
                 q.setParameter("eid", excludeId);
             }
             return q.getSingleResult() > 0;
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public List<RestaurantTable> findTablesForOrder(int restaurantId) {
-        var em = emf.createEntityManager();
-        try {
-            String jpql = "SELECT t FROM RestaurantTable t WHERE t.restaurant.id = :rid and t.available = true";
-            var q = em.createQuery(jpql, RestaurantTable.class);
-            q.setParameter("rid", restaurantId);
+        try (EntityManager em = emf.createEntityManager()) {
+            String jpql = "SELECT t FROM RestaurantTable t WHERE t.restaurant.id = :rid AND t.available = true";
+            TypedQuery<RestaurantTable> q = em.createQuery(jpql, RestaurantTable.class)
+                    .setParameter("rid", restaurantId);
             return q.getResultList();
-        } finally {
-            em.close();
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error finding available tables for order", e);
         }
     }
 }

@@ -14,7 +14,7 @@ public class OrderItem extends BaseModel {
     @JoinColumn(name = "menu_item_id", nullable = false)
     private MenuItem menuItem;
 
-    @Column(nullable = true, columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String customization;
 
     private int quantity = 1;

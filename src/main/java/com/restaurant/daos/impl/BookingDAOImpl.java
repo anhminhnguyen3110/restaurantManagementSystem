@@ -23,56 +23,62 @@ public class BookingDAOImpl implements BookingDAO {
         // Default constructor for DI
     }
 
+    public BookingDAOImpl(EntityManagerFactory emf) {
+        // Testing-purpose constructor
+        this();
+        this.emf = emf;
+    }
+
     @Override
     public void add(Booking booking) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.persist(booking);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.persist(booking);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public Booking getById(int id) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             return em.find(Booking.class, id);
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public List<Booking> find(GetBookingsDto dto) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Booking> cq = cb.createQuery(Booking.class);
             Root<Booking> root = cq.from(Booking.class);
+
             root.fetch("customer", JoinType.LEFT);
-            root.fetch("table",    JoinType.LEFT);
+            root.fetch("table", JoinType.LEFT);
 
             List<Predicate> preds = new ArrayList<>();
             if (dto.getCustomerName() != null && !dto.getCustomerName().isBlank()) {
-                preds.add(cb.like(cb.lower(root.get("customer").get("name")),
+                preds.add(cb.like(
+                        cb.lower(root.get("customer").get("name")),
                         "%" + dto.getCustomerName().toLowerCase() + "%"));
             }
             if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().isBlank()) {
-                preds.add(cb.like(cb.lower(root.get("customer").get("phoneNumber")),
+                preds.add(cb.like(
+                        cb.lower(root.get("customer").get("phoneNumber")),
                         "%" + dto.getPhoneNumber().toLowerCase() + "%"));
             }
             if (dto.getTableNumber() != null) {
-                preds.add(cb.equal(root.get("table").get("number"),
+                preds.add(cb.equal(
+                        root.get("table").get("number"),
                         dto.getTableNumber()));
             }
             if (dto.getStatus() != null) {
-                preds.add(cb.equal(root.get("status"),
-                        dto.getStatus()));
+                preds.add(cb.equal(root.get("status"), dto.getStatus()));
             }
             if (dto.getDate() != null) {
                 preds.add(cb.equal(root.get("date"), dto.getDate()));
@@ -89,60 +95,58 @@ public class BookingDAOImpl implements BookingDAO {
 
             Path<?> sortPath;
             switch (dto.getSortBy()) {
-                case "date"       -> sortPath = root.get("date");
-                case "startTime"  -> sortPath = root.get("startTime");
-                case "endTime"    -> sortPath = root.get("endTime");
-                case "customer"   -> sortPath = root.get("customer").get("name");
-                case "phone"      -> sortPath = root.get("customer").get("phoneNumber");
-                case "restaurant"-> sortPath = root.get("table").get("restaurant").get("name");
-                case "table"      -> sortPath = root.get("table").get("number");
-                case "status"     -> sortPath = root.get("status");
-                default           -> sortPath = root.get("id");
+                case "date" -> sortPath = root.get("date");
+                case "startTime" -> sortPath = root.get("startTime");
+                case "endTime" -> sortPath = root.get("endTime");
+                case "customer" -> sortPath = root.get("customer").get("name");
+                case "phone" -> sortPath = root.get("customer").get("phoneNumber");
+                case "restaurant" -> sortPath = root.get("table").get("restaurant").get("name");
+                case "table" -> sortPath = root.get("table").get("number");
+                case "status" -> sortPath = root.get("status");
+                default -> sortPath = root.get("id");
             }
 
             cq.orderBy("desc".equalsIgnoreCase(dto.getSortDir())
                     ? cb.desc(sortPath)
                     : cb.asc(sortPath));
 
-            System.out.println("Sort by: " + dto.getSortBy());
-            System.out.println("Sort dir: " + dto.getSortDir());
-            System.out.println("Query: " + cq);
-
             TypedQuery<Booking> query = em.createQuery(cq);
             query.setFirstResult(dto.getPage() * dto.getSize());
             query.setMaxResults(dto.getSize());
             return query.getResultList();
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public void update(Booking booking) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.merge(booking);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.merge(booking);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public void delete(int id) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            Booking b = em.find(Booking.class, id);
-            if (b != null) em.remove(b);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                Booking b = em.find(Booking.class, id);
+                if (b != null) {
+                    em.remove(b);
+                }
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 }

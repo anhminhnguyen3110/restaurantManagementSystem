@@ -26,10 +26,6 @@ public class RestaurantTableFormDialog extends JDialog {
     private final int restaurantId;
     private final Runnable onSaved;
 
-    /**
-     * For **editing** an existing table.
-     * Delegates to the full constructor using the table’s own coords.
-     */
     public RestaurantTableFormDialog(
             Frame owner,
             RestaurantTable existing,
@@ -66,7 +62,6 @@ public class RestaurantTableFormDialog extends JDialog {
         this.restaurantId = restaurantId;
         this.onSaved      = onSaved;
 
-        // initialize spinners for X/Y bounds [0..9]
         spnStartX.setModel(new SpinnerNumberModel(startX, 0, 9, 1));
         spnStartY.setModel(new SpinnerNumberModel(startY, 0, 9, 1));
         spnEndX  .setModel(new SpinnerNumberModel(endX,   0, 9, 1));
@@ -76,7 +71,6 @@ public class RestaurantTableFormDialog extends JDialog {
         pack();
         setLocationRelativeTo(owner);
 
-        // if editing, populate number & capacity
         if (existing != null) {
             spnNumber  .setValue(existing.getNumber());
             spnCapacity.setValue(existing.getCapacity());
@@ -112,7 +106,6 @@ public class RestaurantTableFormDialog extends JDialog {
         int ey  = (int) spnEndY.getValue();
 
         if (existing == null) {
-            // create new
             CreateRestaurantTableDto dto = new CreateRestaurantTableDto();
             dto.setNumber(num);
             dto.setCapacity(cap);
@@ -133,7 +126,6 @@ public class RestaurantTableFormDialog extends JDialog {
             controller.createTable(dto);
 
         } else {
-            // update existing
             UpdateRestaurantTableDto dto = new UpdateRestaurantTableDto();
             dto.setId(existing.getId());
             dto.setNumber(num);

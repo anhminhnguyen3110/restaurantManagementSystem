@@ -9,15 +9,6 @@ public enum ShipmentService {
         this.service = service;
     }
 
-    public String getService() {
-        return service.toLowerCase().replace("_", " ");
-    }
-
-    @Override
-    public String toString() {
-        return this.getService();
-    }
-
     public static ShipmentService fromString(String service) {
         for (ShipmentService shipmentService : ShipmentService.values()) {
             if (shipmentService.service.equalsIgnoreCase(service)) {
@@ -25,5 +16,14 @@ public enum ShipmentService {
             }
         }
         throw new IllegalArgumentException("No constant with text " + service + " found");
+    }
+
+    public String getService() {
+        return service.toLowerCase().replace("_", " ");
+    }
+
+    @Override
+    public String toString() {
+        return this.getService();
     }
 }

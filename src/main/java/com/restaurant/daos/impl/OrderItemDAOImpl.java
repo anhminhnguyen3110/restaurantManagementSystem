@@ -24,34 +24,37 @@ public class OrderItemDAOImpl implements OrderItemDAO {
         // Default constructor for DI
     }
 
+    public OrderItemDAOImpl(EntityManagerFactory emf) {
+        // Testing-purpose constructor
+        this();
+        this.emf = emf;
+    }
+
     @Override
     public void add(OrderItem item) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.persist(item);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.persist(item);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public OrderItem getById(int id) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             return em.find(OrderItem.class, id);
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public List<OrderItem> find(GetOrderItemDto dto) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<OrderItem> cq = cb.createQuery(OrderItem.class);
             Root<OrderItem> root = cq.from(OrderItem.class);
@@ -63,15 +66,22 @@ public class OrderItemDAOImpl implements OrderItemDAO {
                 preds.add(cb.equal(root.get("id"), dto.getId()));
             }
             if (dto.getMenuItemName() != null && !dto.getMenuItemName().isBlank()) {
-                preds.add(cb.like(cb.lower(root.get("menuItem").get("name")),
-                        "%" + dto.getMenuItemName().toLowerCase() + "%"));
+                preds.add(cb.like(
+                        cb.lower(root.get("menuItem").get("name")),
+                        "%" + dto.getMenuItemName().toLowerCase() + "%"
+                ));
             }
             if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
-                preds.add(cb.equal(root.get("status"),
-                        OrderItemStatus.valueOf(dto.getStatus())));
+                preds.add(cb.equal(
+                        root.get("status"),
+                        OrderItemStatus.valueOf(dto.getStatus())
+                ));
             }
             if (dto.getOrderId() > 0) {
-                preds.add(cb.equal(root.get("order").get("id"), dto.getOrderId()));
+                preds.add(cb.equal(
+                        root.get("order").get("id"),
+                        dto.getOrderId()
+                ));
             }
             if (dto.getRestaurantId() > 0) {
                 preds.add(cb.equal(
@@ -80,87 +90,88 @@ public class OrderItemDAOImpl implements OrderItemDAO {
                 ));
             }
             if (!preds.isEmpty()) {
-                cq.where(preds.toArray(new Predicate[0]));
+                cq.where(cb.and(preds.toArray(new Predicate[0])));
             }
-            if (dto.getSortBy() != null && !dto.getSortBy().isBlank()) {
-                if (dto.getSortDir() != null && dto.getSortDir().equalsIgnoreCase("desc")) {
-                    cq.orderBy(cb.desc(root.get(dto.getSortBy())));
-                } else {
-                    cq.orderBy(cb.asc(root.get(dto.getSortBy())));
-                }
-            } else {
-                cq.orderBy(cb.asc(root.get("id")));
-            }
+
+            // determine sort path (default "id")
+            Path<?> sortPath = root.get(
+                    (dto.getSortBy() != null && !dto.getSortBy().isBlank())
+                            ? dto.getSortBy()
+                            : "id"
+            );
+            cq.orderBy("desc".equalsIgnoreCase(dto.getSortDir())
+                    ? cb.desc(sortPath)
+                    : cb.asc(sortPath)
+            );
 
             TypedQuery<OrderItem> q = em.createQuery(cq);
             q.setFirstResult(dto.getPage() * dto.getSize());
             q.setMaxResults(dto.getSize());
-
             return q.getResultList();
-        } finally {
-            em.close();
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error fetching order items", e);
         }
     }
 
     @Override
     public void update(OrderItem item) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            OrderItem managed = em.find(OrderItem.class, item.getId());
-            if (managed == null) {
-                throw new IllegalArgumentException("No OrderItem with id=" + item.getId());
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                OrderItem managed = em.find(OrderItem.class, item.getId());
+                if (managed == null) {
+                    throw new IllegalArgumentException("No OrderItem with id=" + item.getId());
+                }
+                if (item.getQuantity() != 0) {
+                    managed.setQuantity(item.getQuantity());
+                }
+                if (item.getCustomization() != null) {
+                    managed.setCustomization(item.getCustomization());
+                }
+                if (item.getStatus() != null) {
+                    managed.setStatus(item.getStatus());
+                }
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
             }
-            if (item.getQuantity() != 0) {
-                managed.setQuantity(item.getQuantity());
-            }
-            if (item.getCustomization() != null) {
-                managed.setCustomization(item.getCustomization());
-            }
-            if (item.getStatus() != null) {
-                managed.setStatus(item.getStatus());
-            }
-            tx.commit();
-        } finally {
-            if (tx.isActive()) {
-                tx.rollback();
-            }
-            em.close();
         }
     }
 
-
     @Override
     public void delete(int id) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            OrderItem oi = em.find(OrderItem.class, id);
-            if (oi != null) em.remove(oi);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                OrderItem oi = em.find(OrderItem.class, id);
+                if (oi != null) {
+                    em.remove(oi);
+                }
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public boolean existsByOrderAndMenuItem(int orderId, int menuItemId, String customization) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            Long cnt = em.createQuery(
-                            "SELECT COUNT(oi) FROM OrderItem oi " +
-                                    "WHERE oi.order.id = :oid AND oi.menuItem.id = :mid AND oi.customization = :cust",
-                            Long.class)
-                    .setParameter("oid", orderId)
-                    .setParameter("mid", menuItemId)
-                    .setParameter("cust", customization)
-                    .getSingleResult();
-            return cnt > 0;
-        } finally {
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            TypedQuery<Long> q = em.createQuery(
+                    "SELECT COUNT(oi) FROM OrderItem oi " +
+                            "WHERE oi.order.id = :oid " +
+                            "  AND oi.menuItem.id = :mid " +
+                            "  AND oi.customization = :cust",
+                    Long.class
+            );
+            q.setParameter("oid", orderId);
+            q.setParameter("mid", menuItemId);
+            q.setParameter("cust", customization);
+            return q.getSingleResult() > 0;
         }
     }
 }

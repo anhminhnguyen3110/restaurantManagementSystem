@@ -20,4 +20,6 @@ public interface UserController {
     User getUser(int id);
 
     List<User> findAllShippers();
+
+    void deleteUser(int id);
 }

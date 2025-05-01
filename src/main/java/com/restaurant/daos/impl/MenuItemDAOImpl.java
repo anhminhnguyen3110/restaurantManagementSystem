@@ -23,38 +23,42 @@ public class MenuItemDAOImpl implements MenuItemDAO {
         // Default constructor for DI
     }
 
+    public MenuItemDAOImpl(EntityManagerFactory emf) {
+        // Testing-purpose constructor
+        this();
+        this.emf = emf;
+    }
+
     @Override
     public void add(MenuItem item) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.persist(item);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.persist(item);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public MenuItem getById(int id) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             return em.find(MenuItem.class, id);
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public List<MenuItem> find(GetMenuItemsDto dto) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<MenuItem> cq = cb.createQuery(MenuItem.class);
             Root<MenuItem> root = cq.from(MenuItem.class);
 
+            // fetch associations
             root.fetch("menu", JoinType.LEFT)
                     .fetch("restaurant", JoinType.LEFT);
             root.fetch("orderItems", JoinType.LEFT);
@@ -85,57 +89,60 @@ public class MenuItemDAOImpl implements MenuItemDAO {
                 ));
             }
 
-            if (dto.getSortBy() != null && !dto.getSortBy().isBlank()) {
-                if (dto.getSortDir() != null && dto.getSortDir().equalsIgnoreCase("desc")) {
-                    cq.orderBy(cb.desc(root.get(dto.getSortBy())));
-                } else {
-                    cq.orderBy(cb.asc(root.get(dto.getSortBy())));
-                }
-            } else {
-                cq.orderBy(cb.asc(root.get("id")));
-            }
-
-            cq.select(root)
-                    .distinct(true);
+            cq.select(root).distinct(true);
             if (!preds.isEmpty()) {
                 cq.where(cb.and(preds.toArray(new Predicate[0])));
             }
+
+            // determine sort path (default to "id")
+            Path<?> sortPath = root.get(
+                    dto.getSortBy() != null && !dto.getSortBy().isBlank()
+                            ? dto.getSortBy()
+                            : "id"
+            );
+            cq.orderBy("desc".equalsIgnoreCase(dto.getSortDir())
+                    ? cb.desc(sortPath)
+                    : cb.asc(sortPath));
 
             TypedQuery<MenuItem> q = em.createQuery(cq);
             q.setFirstResult(dto.getPage() * dto.getSize());
             q.setMaxResults(dto.getSize());
             return q.getResultList();
-        } finally {
-            em.close();
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error fetching menu items", e);
         }
     }
 
     @Override
     public void update(MenuItem item) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.merge(item);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.merge(item);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public void delete(int id) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            MenuItem m = em.find(MenuItem.class, id);
-            if (m != null) em.remove(m);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                MenuItem m = em.find(MenuItem.class, id);
+                if (m != null) {
+                    em.remove(m);
+                }
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
@@ -146,8 +153,7 @@ public class MenuItemDAOImpl implements MenuItemDAO {
 
     @Override
     public boolean existsByName(String name, Integer excludeId) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             String jpql = "SELECT COUNT(m) FROM MenuItem m WHERE m.name = :name"
                     + (excludeId != null ? " AND m.id <> :eid" : "");
             TypedQuery<Long> q = em.createQuery(jpql, Long.class)
@@ -156,21 +162,16 @@ public class MenuItemDAOImpl implements MenuItemDAO {
                 q.setParameter("eid", excludeId);
             }
             return q.getSingleResult() > 0;
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public List<MenuItem> findByRestaurantId(int restaurantId) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             String jpql = "SELECT m FROM MenuItem m JOIN m.menu r WHERE r.restaurant.id = :restaurantId";
             TypedQuery<MenuItem> q = em.createQuery(jpql, MenuItem.class)
                     .setParameter("restaurantId", restaurantId);
             return q.getResultList();
-        } finally {
-            em.close();
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.restaurant.controllers.impl;
 
+import com.restaurant.constants.OrderStatus;
+import com.restaurant.constants.OrderType;
 import com.restaurant.controllers.OrderController;
 import com.restaurant.daos.OrderDAO;
 import com.restaurant.daos.RestaurantDAO;
@@ -13,20 +15,32 @@ import com.restaurant.dtos.order.UpdateOrderDto;
 import com.restaurant.models.Order;
 import com.restaurant.models.Restaurant;
 import com.restaurant.models.RestaurantTable;
-import com.restaurant.constants.OrderType;
-import com.restaurant.constants.OrderStatus;
 import com.restaurant.models.Shipment;
 
 import java.util.List;
 
 @Injectable
 public class OrderControllerImpl implements OrderController {
-    @Inject private OrderDAO orderDAO;
-    @Inject private RestaurantTableDAO tableDAO;
-    @Inject private RestaurantDAO restaurantDAO;
-    @Inject private ShipmentDAO shipmentDAO;
+    @Inject
+    private OrderDAO orderDAO;
+    @Inject
+    private RestaurantTableDAO tableDAO;
+    @Inject
+    private RestaurantDAO restaurantDAO;
+    @Inject
+    private ShipmentDAO shipmentDAO;
 
-    public OrderControllerImpl() {}
+    public OrderControllerImpl() {
+    }
+
+    public OrderControllerImpl(OrderDAO orderDAO, RestaurantTableDAO tableDAO, RestaurantDAO restaurantDAO, ShipmentDAO shipmentDAO) {
+        // Testing purpose constructor
+        this();
+        this.orderDAO = orderDAO;
+        this.tableDAO = tableDAO;
+        this.restaurantDAO = restaurantDAO;
+        this.shipmentDAO = shipmentDAO;
+    }
 
     @Override
     public Order createOrder(CreateOrderDto dto) {

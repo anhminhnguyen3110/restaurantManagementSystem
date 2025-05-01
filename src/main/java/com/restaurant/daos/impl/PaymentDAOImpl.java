@@ -17,40 +17,44 @@ import java.util.List;
 
 @Injectable
 public class PaymentDAOImpl implements PaymentDAO {
-    @Inject private EntityManagerFactory emf;
+    @Inject
+    private EntityManagerFactory emf;
 
     public PaymentDAOImpl() {
         // Default constructor for DI
     }
 
+    public PaymentDAOImpl(EntityManagerFactory emf) {
+        // Testing-purpose constructor
+        this();
+        this.emf = emf;
+    }
+
     @Override
     public void add(Payment payment) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.persist(payment);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.persist(payment);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public Payment getById(int id) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             return em.find(Payment.class, id);
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public List<Payment> find(GetPaymentDto dto) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Payment> cq = cb.createQuery(Payment.class);
             Root<Payment> root = cq.from(Payment.class);
@@ -74,24 +78,22 @@ public class PaymentDAOImpl implements PaymentDAO {
             q.setFirstResult(dto.getPage() * dto.getSize());
             q.setMaxResults(dto.getSize());
             return q.getResultList();
-        } finally {
-            em.close();
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error fetching payments", e);
         }
     }
 
     @Override
     public boolean existsByOrder(int orderId) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            Long cnt = em.createQuery(
-                            "SELECT COUNT(p) FROM Payment p WHERE p.order.id = :oid AND p.status != :cancelStatus",
-                            Long.class)
-                    .setParameter("oid", orderId)
-                    .setParameter("cancelStatus", PaymentStatus.CANCELLED)
-                    .getSingleResult();
-            return cnt > 0;
-        } finally {
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            TypedQuery<Long> q = em.createQuery(
+                    "SELECT COUNT(p) FROM Payment p " +
+                            "WHERE p.order.id = :oid AND p.status != :cancelStatus",
+                    Long.class
+            );
+            q.setParameter("oid", orderId);
+            q.setParameter("cancelStatus", PaymentStatus.CANCELLED);
+            return q.getSingleResult() > 0;
         }
     }
 }

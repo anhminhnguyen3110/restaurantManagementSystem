@@ -23,6 +23,13 @@ public class PaymentControllerImpl implements PaymentController {
         // Default constructor for DI
     }
 
+    public PaymentControllerImpl(PaymentDAO paymentDAO, OrderDAO orderDAO) {
+        // Testing purpose constructor
+        this();
+        this.paymentDAO = paymentDAO;
+        this.orderDAO = orderDAO;
+    }
+
     @Override
     public void createPayment(CreatePaymentDto dto) {
         if (paymentDAO.existsByOrder(dto.getOrderId())) {
@@ -43,10 +50,5 @@ public class PaymentControllerImpl implements PaymentController {
     @Override
     public List<Payment> findPayments(GetPaymentDto dto) {
         return paymentDAO.find(dto);
-    }
-
-    @Override
-    public Payment getPayment(int id) {
-        return paymentDAO.getById(id);
     }
 }

@@ -10,6 +10,4 @@ public interface PaymentController {
     void createPayment(CreatePaymentDto createPaymentDto);
 
     List<Payment> findPayments(GetPaymentDto getPaymentDto);
-
-    Payment getPayment(int id);
 }

@@ -1,6 +1,7 @@
 package com.restaurant.dtos.restaurantTable;
 
 import com.restaurant.constants.BookingTimeSlot;
+
 import java.time.LocalDate;
 
 public class GetRestaurantTableForBookingDto extends GetRestaurantTableDto {

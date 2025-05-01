@@ -12,8 +12,7 @@ import java.util.List;
 public class Order extends BaseModel {
     @ManyToOne(
             cascade = CascadeType.ALL,
-            fetch = FetchType.EAGER,
-            optional = true
+            fetch = FetchType.EAGER
     )
     @JoinColumn(name = "restaurant_table_id")
     private RestaurantTable restaurantTable;
@@ -37,7 +36,7 @@ public class Order extends BaseModel {
     @Column(length = 20, nullable = false)
     private OrderType orderType;
 
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval=true)
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private Shipment shipment;
 
     @ManyToOne(

@@ -123,7 +123,7 @@ public class PaymentListView extends JPanel {
         loadData();
     }
 
-    private void loadData() {
+    public void loadData() {
         model.setRowCount(0);
         List<Payment> list = paymentController.findPayments(dto);
         for (Payment p : list) {

@@ -17,40 +17,44 @@ import java.util.List;
 
 @Injectable
 public class ShipmentDAOImpl implements ShipmentDAO {
-    @Inject private EntityManagerFactory emf;
+    @Inject
+    private EntityManagerFactory emf;
 
     public ShipmentDAOImpl() {
         // Default constructor for DI
     }
 
+    public ShipmentDAOImpl(EntityManagerFactory emf) {
+        // Testing-purpose constructor
+        this();
+        this.emf = emf;
+    }
+
     @Override
     public void add(Shipment shipment) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.persist(shipment);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.persist(shipment);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public Shipment getById(int id) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             return em.find(Shipment.class, id);
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public List<Shipment> find(GetShipmentDto dto) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Shipment> cq = cb.createQuery(Shipment.class);
             Root<Shipment> root = cq.from(Shipment.class);
@@ -66,19 +70,25 @@ public class ShipmentDAOImpl implements ShipmentDAO {
                 preds.add(cb.equal(root.get("order").get("id"), dto.getOrderId()));
             }
             if (dto.getShipperName() != null && !dto.getShipperName().isBlank()) {
-                preds.add(cb.like(cb.lower(root.get("shipper").get("name")),
-                        "%" + dto.getShipperName().toLowerCase() + "%"));
+                preds.add(cb.like(
+                        cb.lower(root.get("shipper").get("name")),
+                        "%" + dto.getShipperName().toLowerCase() + "%"
+                ));
             }
             if (dto.getCustomerName() != null && !dto.getCustomerName().isBlank()) {
-                preds.add(cb.like(cb.lower(root.get("customer").get("name")),
-                        "%" + dto.getCustomerName().toLowerCase() + "%"));
+                preds.add(cb.like(
+                        cb.lower(root.get("customer").get("name")),
+                        "%" + dto.getCustomerName().toLowerCase() + "%"
+                ));
             }
             if (dto.getStatus() != null) {
                 preds.add(cb.equal(root.get("status"), dto.getStatus()));
             }
             if (dto.getTrackingNumber() != null && !dto.getTrackingNumber().isBlank()) {
-                preds.add(cb.like(cb.lower(root.get("trackingNumber")),
-                        "%" + dto.getTrackingNumber().toLowerCase() + "%"));
+                preds.add(cb.like(
+                        cb.lower(root.get("trackingNumber")),
+                        "%" + dto.getTrackingNumber().toLowerCase() + "%"
+                ));
             }
             if (!preds.isEmpty()) {
                 cq.where(preds.toArray(new Predicate[0]));
@@ -88,53 +98,52 @@ public class ShipmentDAOImpl implements ShipmentDAO {
             q.setFirstResult(dto.getPage() * dto.getSize());
             q.setMaxResults(dto.getSize());
             return q.getResultList();
-        } finally {
-            em.close();
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error fetching shipments", e);
         }
     }
 
     @Override
     public void update(Shipment shipment) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.merge(shipment);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.merge(shipment);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public void delete(int id) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            Shipment s = em.find(Shipment.class, id);
-            if (s != null) em.remove(s);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                Shipment s = em.find(Shipment.class, id);
+                if (s != null) em.remove(s);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public boolean existsPendingByOrder(int orderId) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            Long cnt = em.createQuery(
-                            "SELECT COUNT(s) FROM Shipment s WHERE s.order.id = :oid AND s.status = :st",
-                            Long.class)
-                    .setParameter("oid", orderId)
-                    .setParameter("st", ShipmentStatus.SHIPPING)
-                    .getSingleResult();
-            return cnt > 0;
-        } finally {
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            TypedQuery<Long> q = em.createQuery(
+                    "SELECT COUNT(s) FROM Shipment s WHERE s.order.id = :oid AND s.status = :st",
+                    Long.class
+            );
+            q.setParameter("oid", orderId);
+            q.setParameter("st", ShipmentStatus.SHIPPING);
+            return q.getSingleResult() > 0;
         }
     }
 }

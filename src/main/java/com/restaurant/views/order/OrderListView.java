@@ -43,7 +43,6 @@ public class OrderListView extends JPanel {
 
         setLayout(new BorderLayout(10,10));
 
-        // --- top filter row ---
         List<Restaurant> restaurants = restaurantController.findAllRestaurants();
         for (Restaurant r : restaurants) {
             cbRestaurant.addItem(r);
@@ -61,7 +60,6 @@ public class OrderListView extends JPanel {
         top.add(btnReset); top.add(btnAdd);
         add(top, BorderLayout.NORTH);
 
-        // --- main table ---
         model = new DefaultTableModel(COLUMNS, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         };
@@ -69,13 +67,11 @@ public class OrderListView extends JPanel {
         table.setRowHeight(24);
         add(new JScrollPane(table), BorderLayout.CENTER);
 
-        // --- bottom paging row ---
         JPanel paging = new JPanel();
         paging.add(btnPrev);
         paging.add(btnNext);
         add(paging, BorderLayout.SOUTH);
 
-        // --- wiring listeners ---
         dpDate.addActionListener(e -> applyFilters());
         cbType.addActionListener(e -> applyFilters());
         cbStatus.addActionListener(e -> applyFilters());
@@ -152,7 +148,7 @@ public class OrderListView extends JPanel {
         currentDto.setSortDir("desc");
     }
 
-    private void loadData() {
+    public void loadData() {
         model.setRowCount(0);
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd MMM yyyy");
 

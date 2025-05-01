@@ -25,9 +25,17 @@ public class BookingControllerImpl implements BookingController {
     private CustomerDAO customerDAO;
     @Inject
     private RestaurantTableDAO tableDAO;
-    
+
     public BookingControllerImpl() {
         // Default constructor for DI
+    }
+
+    public BookingControllerImpl(BookingDAO bookingDAO, CustomerDAO customerDAO, RestaurantTableDAO tableDAO) {
+        // Testing purpose constructor
+        this();
+        this.bookingDAO = bookingDAO;
+        this.customerDAO = customerDAO;
+        this.tableDAO = tableDAO;
     }
 
     @Override

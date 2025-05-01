@@ -3,10 +3,21 @@ package com.restaurant.utils;
 import com.restaurant.constants.*;
 import com.restaurant.di.Inject;
 import com.restaurant.di.Injectable;
-import com.restaurant.models.*;
+import com.restaurant.models.Booking;
+import com.restaurant.models.Customer;
+import com.restaurant.models.Menu;
+import com.restaurant.models.MenuItem;
+import com.restaurant.models.Order;
+import com.restaurant.models.OrderItem;
+import com.restaurant.models.Payment;
+import com.restaurant.models.Restaurant;
+import com.restaurant.models.RestaurantTable;
+import com.restaurant.models.Shipment;
+import com.restaurant.models.User;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
+import org.mindrot.jbcrypt.BCrypt;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -29,21 +40,16 @@ public class DataSeeder {
         EntityTransaction tx = em.getTransaction();
         try {
             tx.begin();
-
             List<Restaurant> restaurants = seedRestaurants(em);
             List<Menu> menus = seedMenus(em, restaurants);
             List<MenuItem> menuItems = seedMenuItems(em, menus);
             List<RestaurantTable> tables = seedTables(em, restaurants);
-
             List<User> users = seedUsers(em);
             List<Customer> customers = seedCustomers(em);
-
             seedBookings(em, customers, tables);
             List<Order> orders = seedOrders(em, tables, menuItems);
-
             seedPayments(em, orders);
             seedShipments(em, orders, users, customers);
-
             tx.commit();
             System.out.println("✔︎ Database seeded successfully");
         } catch (Exception e) {
@@ -62,14 +68,12 @@ public class DataSeeder {
                 "Mountain Peak Restaurant"
         };
         RestaurantStatus[] statuses = RestaurantStatus.values();
-        final int defaultMaxX = 10, defaultMaxY = 10;
-
+        int defaultMaxX = 10, defaultMaxY = 10;
         for (int i = 0; i < names.length; i++) {
             Restaurant r = new Restaurant();
             r.setName(names[i]);
             r.setAddress("123 " + names[i] + " Street");
             r.setStatus(statuses[i % statuses.length]);
-
             r.setMaxX(defaultMaxX);
             r.setMaxY(defaultMaxY);
             em.persist(r);
@@ -118,34 +122,25 @@ public class DataSeeder {
     private List<RestaurantTable> seedTables(EntityManager em, List<Restaurant> restaurants) {
         List<RestaurantTable> tables = new ArrayList<>();
         int[] capacities = {4, 8, 16};
-
         for (Restaurant restaurant : restaurants) {
             int maxX = restaurant.getMaxX();
             int maxY = restaurant.getMaxY();
-
             boolean[][] occupied = new boolean[maxY][maxX];
-
             for (int tableNumber = 1; tableNumber <= 10; tableNumber++) {
                 int startX, startY, endX, endY;
-
                 do {
                     startX = random.nextInt(maxX);
                     startY = random.nextInt(maxY);
-
                     int w = 1 + random.nextInt(3);
                     int h = 1 + random.nextInt(3);
-
                     endX = Math.min(maxX - 1, startX + w - 1);
                     endY = Math.min(maxY - 1, startY + h - 1);
-
                 } while (regionOverlaps(occupied, startX, startY, endX, endY));
-
                 for (int y = startY; y <= endY; y++) {
                     for (int x = startX; x <= endX; x++) {
                         occupied[y][x] = true;
                     }
                 }
-
                 RestaurantTable table = new RestaurantTable();
                 table.setRestaurant(restaurant);
                 table.setNumber(tableNumber);
@@ -155,7 +150,6 @@ public class DataSeeder {
                 table.setEndX(endX);
                 table.setEndY(endY);
                 table.setAvailable(true);
-
                 em.persist(table);
                 restaurant.getTables().add(table);
                 tables.add(table);
@@ -167,7 +161,9 @@ public class DataSeeder {
     private boolean regionOverlaps(boolean[][] occ, int sx, int sy, int ex, int ey) {
         for (int y = sy; y <= ey; y++) {
             for (int x = sx; x <= ex; x++) {
-                if (occ[y][x]) return true;
+                if (occ[y][x]) {
+                    return true;
+                }
             }
         }
         return false;
@@ -175,17 +171,31 @@ public class DataSeeder {
 
     private List<User> seedUsers(EntityManager em) {
         List<User> users = new ArrayList<>();
-        UserRole[] roles = UserRole.values();
-        for (int i = 1; i <= 10; i++) {
-            User user = new User();
-            user.setName("User " + i);
-            user.setUsername("user" + i);
-            user.setPasswordHash("$2a$10$FAKEHASHFOREXAMPLEONLY");
-            user.setRole(roles[random.nextInt(roles.length)]);
-            user.setEmail("user" + i + "@example.com");
-            user.setActive(true);
-            em.persist(user);
-            users.add(user);
+        User owner = new User();
+        owner.setName("Owner");
+        owner.setUsername("admin");
+        owner.setPasswordHash(BCrypt.hashpw("123", BCrypt.gensalt()));
+        owner.setRole(UserRole.OWNER);
+        owner.setEmail("owner@example.com");
+        owner.setActive(true);
+        em.persist(owner);
+        users.add(owner);
+        List<UserRole> nonOwnerRoles = new ArrayList<>();
+        for (UserRole r : UserRole.values()) {
+            if (r != UserRole.OWNER) {
+                nonOwnerRoles.add(r);
+            }
+        }
+        for (int i = 1; i <= 9; i++) {
+            User u = new User();
+            u.setName("User " + i);
+            u.setUsername("user" + i);
+            u.setPasswordHash(BCrypt.hashpw("123", BCrypt.gensalt()));
+            u.setRole(nonOwnerRoles.get(random.nextInt(nonOwnerRoles.size())));
+            u.setEmail("user" + i + "@example.com");
+            u.setActive(true);
+            em.persist(u);
+            users.add(u);
         }
         return users;
     }
@@ -210,10 +220,8 @@ public class DataSeeder {
         BookingTimeSlot[] slots = BookingTimeSlot.values();
         for (int i = 0; i < 50; i++) {
             Booking b = new Booking();
-
             LocalDate date = LocalDate.now().plusDays(1 + random.nextInt(14));
             b.setDate(date);
-
             int startIdx = random.nextInt(slots.length - 1);
             int maxOffset = slots.length - startIdx - 1;
             int offset = 1 + random.nextInt(maxOffset);
@@ -238,7 +246,7 @@ public class DataSeeder {
             for (int j = 0; j < perTable; j++) {
                 Order o = new Order();
                 o.setOrderType(types[random.nextInt(types.length)]);
-                if(o.getOrderType() == OrderType.DINE_IN) {
+                if (o.getOrderType() == OrderType.DINE_IN) {
                     continue;
                 } else {
                     o.setRestaurant(table.getRestaurant());
@@ -278,11 +286,13 @@ public class DataSeeder {
         }
     }
 
-    private void seedShipments(EntityManager em, List<Order> orders,
-                               List<User> users, List<Customer> customers) {
-        List<User> shippers = users.stream()
-                .filter(u -> u.getRole() == UserRole.SHIPPER)
-                .toList();
+    private void seedShipments(EntityManager em, List<Order> orders, List<User> users, List<Customer> customers) {
+        List<User> shippers = new ArrayList<>();
+        for (User u : users) {
+            if (u.getRole() == UserRole.SHIPPER) {
+                shippers.add(u);
+            }
+        }
         ShipmentStatus[] statuses = ShipmentStatus.values();
         ShipmentService[] services = ShipmentService.values();
         for (Order order : orders) {

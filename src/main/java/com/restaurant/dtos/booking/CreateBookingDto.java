@@ -13,7 +13,8 @@ public class CreateBookingDto {
     private String customerPhoneNumber;
     private String customerEmail;
 
-    public CreateBookingDto() {}
+    public CreateBookingDto() {
+    }
 
     public LocalDate getDate() {
         return date;

@@ -11,15 +11,6 @@ public enum BookingStatus {
         this.status = status;
     }
 
-    public String getStatus() {
-        return status.toLowerCase().replace("_", " ");
-    }
-
-    @Override
-    public String toString() {
-        return this.getStatus();
-    }
-
     public static BookingStatus fromString(String status) {
         for (BookingStatus bookingStatus : BookingStatus.values()) {
             if (bookingStatus.status.equalsIgnoreCase(status)) {
@@ -27,5 +18,14 @@ public enum BookingStatus {
             }
         }
         throw new IllegalArgumentException("No constant with text " + status + " found");
+    }
+
+    public String getStatus() {
+        return status.toLowerCase().replace("_", " ");
+    }
+
+    @Override
+    public String toString() {
+        return this.getStatus();
     }
 }

@@ -17,11 +17,11 @@ public class Booking extends BaseModel {
     private BookingTimeSlot startTime;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "end_time",   length = 5, nullable = false)
+    @Column(name = "end_time", length = 5, nullable = false)
     private BookingTimeSlot endTime;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "table_id",    nullable = false)
+    @JoinColumn(name = "table_id", nullable = false)
     private RestaurantTable table;
 
     @ManyToOne(fetch = FetchType.EAGER)
@@ -32,13 +32,14 @@ public class Booking extends BaseModel {
     @Column(length = 20, nullable = false)
     private BookingStatus status = BookingStatus.BOOKED;
 
-    public Booking() {}
+    public Booking() {
+    }
 
     public Booking(LocalDate date, BookingTimeSlot startTime, BookingTimeSlot endTime, RestaurantTable table) {
-        this.date      = date;
+        this.date = date;
         this.startTime = startTime;
-        this.endTime   = endTime;
-        this.table     = table;
+        this.endTime = endTime;
+        this.table = table;
     }
 
     public LocalDate getDate() {

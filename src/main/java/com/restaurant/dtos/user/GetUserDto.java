@@ -7,6 +7,7 @@ public class GetUserDto extends PaginationDto {
     private String username;
     private String email;
     private UserRole role;
+    private String name;
 
     public GetUserDto() {
     }
@@ -33,5 +34,13 @@ public class GetUserDto extends PaginationDto {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

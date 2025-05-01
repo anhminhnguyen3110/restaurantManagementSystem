@@ -8,11 +8,7 @@ import com.restaurant.daos.impl.*;
 import com.restaurant.di.Injector;
 import com.restaurant.models.*;
 import com.restaurant.utils.DataSeeder;
-import com.restaurant.views.order.OrderApp;
-import com.restaurant.views.orderItem.OrderItemApp;
-import com.restaurant.views.payment.PaymentApp;
-import com.restaurant.views.restaurantTable.RestaurantTableApp;
-import com.restaurant.views.shipment.ShipmentApp;
+import com.restaurant.views.MainView;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
 import org.hibernate.boot.Metadata;
@@ -42,14 +38,7 @@ public class Main {
             }
         }));
 
-//        BookingApp.launch();
-//        MenuApp.launch();
-//        RestaurantApp.launch();
-        RestaurantTableApp.launch();
-        OrderApp.launch();
-//        OrderItemApp.launch();
-//        PaymentApp.launch();
-//        ShipmentApp.launch();
+        MainView.launch();
     }
 
     public static void initSchema() {

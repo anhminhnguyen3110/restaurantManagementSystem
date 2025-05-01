@@ -238,7 +238,7 @@ public class MenuItemListView extends JPanel {
         sortDir = "desc";
     }
 
-    private void loadData() {
+    public void loadData() {
         model.setRowCount(0);
         List<MenuItem> list = menuItemController.findMenuItems(currentDto);
         if ("price".equals(sortBy)) {

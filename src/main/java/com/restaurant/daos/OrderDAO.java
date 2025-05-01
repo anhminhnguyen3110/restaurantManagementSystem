@@ -18,6 +18,4 @@ public interface OrderDAO {
     void delete(int id);
 
     boolean hasPendingForTableAndType(int tableId, OrderType type);
-
-    List<Order> findAll();
 }

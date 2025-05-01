@@ -166,7 +166,7 @@ public class OrderItemListView extends JPanel {
         loadData();
     }
 
-    private void loadData() {
+    public void loadData() {
         dto.setOrderId(order != null ? order.getId() : 0);
         List<OrderItem> items = orderItemController.findOrderItems(dto);
         model.setRowCount(0);

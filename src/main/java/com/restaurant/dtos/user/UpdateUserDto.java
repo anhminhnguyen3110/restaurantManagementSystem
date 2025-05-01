@@ -8,6 +8,7 @@ public class UpdateUserDto {
     private UserRole role;
     private String email;
     private Boolean active;
+    private String name;
 
     public int getId() {
         return id;
@@ -47,5 +48,13 @@ public class UpdateUserDto {
 
     public void setActive(Boolean active) {
         this.active = active;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

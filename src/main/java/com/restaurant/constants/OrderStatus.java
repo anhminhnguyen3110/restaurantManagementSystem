@@ -13,15 +13,6 @@ public enum OrderStatus {
         this.status = status;
     }
 
-    public String getStatus() {
-        return status.toLowerCase().replace("_", " ");
-    }
-
-    @Override
-    public String toString() {
-        return this.getStatus();
-    }
-
     public static OrderStatus fromString(String status) {
         for (OrderStatus os : OrderStatus.values()) {
             if (os.status.equalsIgnoreCase(status)) {
@@ -29,5 +20,14 @@ public enum OrderStatus {
             }
         }
         throw new IllegalArgumentException("No constant with status " + status + " found");
+    }
+
+    public String getStatus() {
+        return status.toLowerCase().replace("_", " ");
+    }
+
+    @Override
+    public String toString() {
+        return this.getStatus();
     }
 }

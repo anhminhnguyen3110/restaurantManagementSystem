@@ -67,7 +67,6 @@ public class RestaurantListView extends JPanel {
         btnReset .addActionListener(e -> { resetFilters(); loadData(); });
         btnAdd   .addActionListener(e -> openForm(null));
 
-        // --- Table ---
         model = new DefaultTableModel(COLUMNS, 0) {
             @Override public boolean isCellEditable(int r, int c) {
                 return false;
@@ -87,7 +86,7 @@ public class RestaurantListView extends JPanel {
                 return this;
             }
         });
-        // double-click to edit
+
         table.addMouseListener(new MouseAdapter(){
             @Override public void mouseClicked(MouseEvent e){
                 if(e.getClickCount()==2){
@@ -98,7 +97,6 @@ public class RestaurantListView extends JPanel {
         });
         add(new JScrollPane(table), BorderLayout.CENTER);
 
-        // --- Paging ---
         JPanel paging = new JPanel();
         paging.add(btnPrev);
         paging.add(btnNext);
@@ -140,7 +138,7 @@ public class RestaurantListView extends JPanel {
         currentDto.setPage(0);
     }
 
-    private void loadData() {
+    public void loadData() {
         model.setRowCount(0);
         List<Restaurant> list = controller.findRestaurants(currentDto);
         for (Restaurant r: list) {

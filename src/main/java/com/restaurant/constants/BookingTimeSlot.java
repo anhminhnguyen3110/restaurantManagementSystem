@@ -1,7 +1,5 @@
 package com.restaurant.constants;
 
-import java.time.LocalDateTime;
-
 public enum BookingTimeSlot {
     SLOT_05_00("05:00"),
     SLOT_05_30("05:30"),
@@ -43,11 +41,11 @@ public enum BookingTimeSlot {
     SLOT_23_30("23:30");
 
 
+    private final String time;
+
     BookingTimeSlot(String time) {
         this.time = time;
     }
-
-    private String time;
 
     public String getTime() {
         return time;
@@ -56,9 +54,5 @@ public enum BookingTimeSlot {
     @Override
     public String toString() {
         return time;
-    }
-
-    public LocalDateTime getLocalDateTime() {
-        return LocalDateTime.parse(time);
     }
 }

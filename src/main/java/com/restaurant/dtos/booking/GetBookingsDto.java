@@ -15,7 +15,8 @@ public class GetBookingsDto extends PaginationDto {
     private BookingTimeSlot startTime;
     private BookingTimeSlot endTime;
 
-    public GetBookingsDto() {}
+    public GetBookingsDto() {
+    }
 
     public String getCustomerName() {
         return customerName;

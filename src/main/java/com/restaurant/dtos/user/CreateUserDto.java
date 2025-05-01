@@ -7,6 +7,7 @@ public class CreateUserDto {
     private String password;
     private UserRole role;
     private String email;
+    private String name;
 
     public CreateUserDto() {
     }
@@ -41,5 +42,13 @@ public class CreateUserDto {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

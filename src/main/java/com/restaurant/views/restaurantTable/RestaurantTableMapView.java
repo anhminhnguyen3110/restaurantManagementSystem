@@ -63,7 +63,7 @@ public class RestaurantTableMapView extends JPanel {
         add(top, BorderLayout.NORTH);
         add(mapContainer, BorderLayout.CENTER);
 
-        ActionListener refresher = e -> refreshMap();
+        ActionListener refresher = e -> loadData();
         cmbRestaurant.addActionListener(refresher);
         datePicker.addActionListener(refresher);
         cbTime.addActionListener(refresher);
@@ -71,13 +71,13 @@ public class RestaurantTableMapView extends JPanel {
             if (cmbRestaurant.getItemCount() > 0) cmbRestaurant.setSelectedIndex(0);
             datePicker.setDate(null);
             cbTime.setSelectedIndex(0);
-            refreshMap();
+            loadData();
         });
 
-        refreshMap();
+        loadData();
     }
 
-    private void refreshMap() {
+    public void loadData() {
         Restaurant r = (Restaurant) cmbRestaurant.getSelectedItem();
         if (r == null) return;
         GetRestaurantTableDto gt = new GetRestaurantTableDto();
@@ -120,10 +120,10 @@ public class RestaurantTableMapView extends JPanel {
         Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
         RestaurantTableFormDialog dlg;
         if (existing != null) {
-            dlg = new RestaurantTableFormDialog(owner, existing, restaurantId, this::refreshMap);
+            dlg = new RestaurantTableFormDialog(owner, existing, restaurantId, this::loadData);
         } else {
             int sx = coords[0], sy = coords[1], ex = coords[2], ey = coords[3];
-            dlg = new RestaurantTableFormDialog(owner, null, restaurantId, sx, sy, ex, ey, this::refreshMap);
+            dlg = new RestaurantTableFormDialog(owner, null, restaurantId, sx, sy, ex, ey, this::loadData);
         }
         dlg.setVisible(true);
     }

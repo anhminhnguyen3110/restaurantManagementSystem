@@ -13,6 +13,4 @@ public interface ShipmentController {
     void updateShipment(UpdateShipmentDto updateShipmentDto);
 
     List<Shipment> findShipments(GetShipmentDto getShipmentDto);
-
-    void deleteShipment(int id);
 }

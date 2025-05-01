@@ -11,15 +11,6 @@ public enum ShipmentStatus {
         this.status = status;
     }
 
-    public String getStatus() {
-        return status.toLowerCase().replace("_", " ");
-    }
-
-    @Override
-    public String toString() {
-        return this.getStatus();
-    }
-
     public static ShipmentStatus fromString(String status) {
         for (ShipmentStatus shipmentStatus : ShipmentStatus.values()) {
             if (shipmentStatus.status.equalsIgnoreCase(status)) {
@@ -27,5 +18,14 @@ public enum ShipmentStatus {
             }
         }
         throw new IllegalArgumentException("No constant with text " + status + " found");
+    }
+
+    public String getStatus() {
+        return status.toLowerCase().replace("_", " ");
+    }
+
+    @Override
+    public String toString() {
+        return this.getStatus();
     }
 }

@@ -12,7 +12,6 @@ import static org.mockito.Mockito.*;
 
 class EnvTest {
 
-    /** Reset the singleton before each test so we get a fresh Env instance. */
     @BeforeEach
     void resetSingleton() throws Exception {
         Field instance = Env.class.getDeclaredField("INSTANCE");

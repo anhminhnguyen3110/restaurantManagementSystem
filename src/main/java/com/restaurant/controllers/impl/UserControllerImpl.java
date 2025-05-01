@@ -15,10 +15,17 @@ import java.util.List;
 
 @Injectable
 public class UserControllerImpl implements UserController {
-    @Inject private UserDAO userDAO;
+    @Inject
+    private UserDAO userDAO;
 
     public UserControllerImpl() {
         // Default constructor for DI
+    }
+
+    public UserControllerImpl(UserDAO userDAO) {
+        // Testing purpose constructor
+        this();
+        this.userDAO = userDAO;
     }
 
     @Override
@@ -32,6 +39,7 @@ public class UserControllerImpl implements UserController {
         u.setPasswordHash(BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt()));
         u.setRole(dto.getRole());
         u.setEmail(dto.getEmail());
+        u.setName(dto.getName());
         u.setActive(true);
         userDAO.add(u);
     }
@@ -51,6 +59,9 @@ public class UserControllerImpl implements UserController {
         }
         if (dto.isActive() != null) {
             u.setActive(dto.isActive());
+        }
+        if (dto.getName() != null) {
+            u.setName(dto.getName());
         }
         userDAO.update(u);
     }
@@ -78,5 +89,10 @@ public class UserControllerImpl implements UserController {
     @Override
     public List<User> findAllShippers() {
         return userDAO.findAllShippers();
+    }
+
+    @Override
+    public void deleteUser(int id) {
+        userDAO.delete(id);
     }
 }

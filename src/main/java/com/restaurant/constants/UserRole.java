@@ -1,24 +1,16 @@
 package com.restaurant.constants;
 
 public enum UserRole {
-    STAFF("staff"),
+    WAIT_STAFF("wait_staff"),
     MANAGER("manager"),
     OWNER("owner"),
+    COOK("cook"),
     SHIPPER("shipper");
 
     private final String role;
 
     UserRole(String role) {
         this.role = role;
-    }
-
-    public String getRole() {
-        return role.toLowerCase().replace("_", " ");
-    }
-
-    @Override
-    public String toString() {
-        return this.getRole();
     }
 
     public static UserRole fromString(String role) {
@@ -28,5 +20,14 @@ public enum UserRole {
             }
         }
         throw new IllegalArgumentException("No constant with role " + role + " found");
+    }
+
+    public String getRole() {
+        return role.toLowerCase().replace("_", " ");
+    }
+
+    @Override
+    public String toString() {
+        return this.getRole();
     }
 }

@@ -11,10 +11,6 @@ public enum RestaurantStatus {
         this.status = status.toLowerCase().replace("_", " ");
     }
 
-    public String getStatus() {
-        return this.getStatus();
-    }
-
     public static RestaurantStatus fromString(String status) {
         for (RestaurantStatus restaurantStatus : RestaurantStatus.values()) {
             if (restaurantStatus.status.equalsIgnoreCase(status)) {
@@ -22,6 +18,10 @@ public enum RestaurantStatus {
             }
         }
         throw new IllegalArgumentException("No constant with text " + status + " found");
+    }
+
+    public String getStatus() {
+        return status;
     }
 
     @Override

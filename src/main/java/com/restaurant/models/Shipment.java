@@ -14,6 +14,9 @@ import java.util.UUID;
         @Index(columnList = "shipper_id")
 })
 public class Shipment extends BaseModel {
+    @Column(unique = true)
+    private final String trackingNumber;
+
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
@@ -29,9 +32,6 @@ public class Shipment extends BaseModel {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ShipmentStatus status = ShipmentStatus.SHIPPING;
-
-    @Column(unique = true)
-    private final String trackingNumber;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id", nullable = false)

@@ -24,6 +24,13 @@ public class MenuControllerImpl implements MenuController {
         // Default constructor for DI
     }
 
+    public MenuControllerImpl(MenuDAO menuDAO, RestaurantDAO restaurantDAO) {
+        // Testing purpose constructor
+        this();
+        this.menuDAO = menuDAO;
+        this.restaurantDAO = restaurantDAO;
+    }
+
     @Override
     public void createMenu(CreateMenuDto dto) {
         if (menuDAO.existsByNameAndRestaurant(dto.getName(), dto.getRestaurantId())) {
@@ -48,8 +55,7 @@ public class MenuControllerImpl implements MenuController {
         Menu m = menuDAO.getById(dto.getId());
         if (m == null) return;
         if (!m.getName().equals(dto.getName())
-                && menuDAO.existsByNameAndRestaurant(dto.getName(), dto.getRestaurantId(), dto.getId()))
-        {
+                && menuDAO.existsByNameAndRestaurant(dto.getName(), dto.getRestaurantId(), dto.getId())) {
             System.out.println("Duplicate menu detected: name=" + dto.getName());
             return;
         }

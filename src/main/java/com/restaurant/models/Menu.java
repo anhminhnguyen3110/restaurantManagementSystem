@@ -11,7 +11,7 @@ public class Menu extends BaseModel {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = true)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @ManyToOne(optional = false, fetch = FetchType.EAGER)
@@ -56,11 +56,6 @@ public class Menu extends BaseModel {
     public void addItem(MenuItem item) {
         items.add(item);
         item.setMenu(this);
-    }
-
-    public void removeItem(MenuItem item) {
-        items.remove(item);
-        item.setMenu(null);
     }
 
     public String getDescription() {

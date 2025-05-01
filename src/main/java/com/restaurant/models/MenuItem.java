@@ -12,7 +12,7 @@ public class MenuItem extends BaseModel {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = true)
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false)

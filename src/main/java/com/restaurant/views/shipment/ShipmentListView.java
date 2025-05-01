@@ -161,7 +161,7 @@ public class ShipmentListView extends JPanel {
         loadData();
     }
 
-    private void loadData() {
+    public void loadData() {
         model.setRowCount(0);
         currentShipments = shipmentController.findShipments(dto);
         for (Shipment s : currentShipments) {

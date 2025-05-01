@@ -294,7 +294,7 @@ public class BookingListView extends JPanel {
         dlg.setVisible(true);
     }
 
-    private void loadData() {
+    public void loadData() {
         model.setRowCount(0);
         List<Booking> page = bookingController.findBookings(currentDto);
         for (Booking b : page) {

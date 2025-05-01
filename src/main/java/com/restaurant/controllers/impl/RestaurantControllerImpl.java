@@ -20,6 +20,12 @@ public class RestaurantControllerImpl implements RestaurantController {
         // Default constructor for DI
     }
 
+    public RestaurantControllerImpl(RestaurantDAO restaurantDAO) {
+        // Testing purpose constructor
+        this();
+        this.restaurantDAO = restaurantDAO;
+    }
+
     @Override
     public void createRestaurant(CreateRestaurantDto dto) {
         if (restaurantDAO.existsByNameAndAddress(dto.getName(), dto.getAddress())) {
@@ -38,7 +44,7 @@ public class RestaurantControllerImpl implements RestaurantController {
     public void updateRestaurant(UpdateRestaurantDto dto) {
         Restaurant r = restaurantDAO.getById(dto.getId());
         if (r == null) return;
-        boolean nameChanged    = !r.getName().equals(dto.getName());
+        boolean nameChanged = !r.getName().equals(dto.getName());
         boolean addressChanged = !r.getAddress().equals(dto.getAddress());
         if ((nameChanged || addressChanged)
                 && restaurantDAO.existsByNameAndAddress(dto.getName(), dto.getAddress())) {

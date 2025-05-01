@@ -25,45 +25,45 @@ public class OrderDAOImpl implements OrderDAO {
         // Default constructor for DI
     }
 
+    public OrderDAOImpl(EntityManagerFactory emf) {
+        // Testing-purpose constructor
+        this();
+        this.emf = emf;
+    }
+
     @Override
     public Order add(Order order) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-
-            if (order.getRestaurant() != null) {
-                order.setRestaurant(em.merge(order.getRestaurant()));
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                if (order.getRestaurant() != null) {
+                    order.setRestaurant(em.merge(order.getRestaurant()));
+                }
+                if (order.getRestaurantTable() != null) {
+                    order.setRestaurantTable(em.merge(order.getRestaurantTable()));
+                }
+                Order managed = em.merge(order);
+                em.flush();
+                tx.commit();
+                return managed;
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
             }
-            if (order.getRestaurantTable() != null) {
-                order.setRestaurantTable(em.merge(order.getRestaurantTable()));
-            }
-
-            Order managed = em.merge(order);
-            em.flush();
-            tx.commit();
-
-            return managed;
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
         }
     }
 
     @Override
     public Order getById(int id) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             return em.find(Order.class, id);
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public List<Order> find(GetOrderDto dto) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             CriteriaBuilder cb = em.getCriteriaBuilder();
             CriteriaQuery<Order> cq = cb.createQuery(Order.class);
             Root<Order> root = cq.from(Order.class);
@@ -84,7 +84,7 @@ public class OrderDAOImpl implements OrderDAO {
             }
             if (dto.getDate() != null) {
                 preds.add(cb.equal(
-                        cb.function("DATE", String.class, root.get("createdAt")),
+                        cb.function("DATE", dto.getDate().getClass(), root.get("createdAt")),
                         dto.getDate()
                 ));
             }
@@ -101,91 +101,78 @@ public class OrderDAOImpl implements OrderDAO {
                 cq.where(preds.toArray(new Predicate[0]));
             }
 
-            if (dto.getSortBy() != null && !dto.getSortBy().isBlank()) {
-                if ("desc".equalsIgnoreCase(dto.getSortDir())) {
-                    cq.orderBy(cb.desc(root.get(dto.getSortBy())));
-                } else {
-                    cq.orderBy(cb.asc(root.get(dto.getSortBy())));
-                }
-            } else {
-                cq.orderBy(cb.asc(root.get("id")));
-            }
+            Path<?> sortPath = root.get(
+                    dto.getSortBy() != null && !dto.getSortBy().isBlank()
+                            ? dto.getSortBy()
+                            : "id"
+            );
+            cq.orderBy("desc".equalsIgnoreCase(dto.getSortDir())
+                    ? cb.desc(sortPath)
+                    : cb.asc(sortPath)
+            );
 
             TypedQuery<Order> q = em.createQuery(cq);
-
             int pageSize = dto.getSize();
-            int page     = dto.getPage();
-
+            int page = dto.getPage();
             q.setFirstResult(page * pageSize);
             q.setMaxResults(pageSize + 1);
 
             List<Order> fetched = q.getResultList();
-
-            boolean hasNext = fetched.size() > pageSize;
-
-            List<Order> pageContent = hasNext
+            return (fetched.size() > pageSize)
                     ? fetched.subList(0, pageSize)
                     : fetched;
-
-            return pageContent;
-        } finally {
-            em.close();
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Error while fetching orders", e);
         }
     }
 
     @Override
     public void update(Order order) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.merge(order);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.merge(order);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public void delete(int id) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            Order o = em.find(Order.class, id);
-            if (o != null) em.remove(o);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                Order o = em.find(Order.class, id);
+                if (o != null) {
+                    em.remove(o);
+                }
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public boolean hasPendingForTableAndType(int tableId, OrderType type) {
-        EntityManager em = emf.createEntityManager();
-        try {
-            Long cnt = em.createQuery(
-                            "SELECT COUNT(o) FROM Order o WHERE o.restaurantTable.id=:tid AND o.orderType=:t AND o.status=:status",
-                            Long.class)
-                    .setParameter("tid", tableId)
-                    .setParameter("t", type)
-                    .setParameter("status", OrderStatus.PENDING)
-                    .getSingleResult();
-            return cnt > 0;
-        } finally {
-            em.close();
-        }
-    }
-
-    @Override
-    public List<Order> findAll() {
-        EntityManager em = emf.createEntityManager();
-        try {
-            return em.createQuery("SELECT o FROM Order o", Order.class).getResultList();
-        } finally {
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            TypedQuery<Long> q = em.createQuery(
+                    "SELECT COUNT(o) FROM Order o " +
+                            "WHERE o.restaurantTable.id = :tid " +
+                            "  AND o.orderType      = :type " +
+                            "  AND o.status         = :status",
+                    Long.class
+            );
+            q.setParameter("tid", tableId);
+            q.setParameter("type", type);
+            q.setParameter("status", OrderStatus.PENDING);
+            return q.getSingleResult() > 0;
         }
     }
 }

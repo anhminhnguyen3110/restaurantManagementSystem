@@ -20,65 +20,66 @@ public class CustomerDAOImpl implements CustomerDAO {
         // Default constructor for DI
     }
 
+    public CustomerDAOImpl(EntityManagerFactory emf) {
+        // Testing-purpose constructor
+        this();
+        this.emf = emf;
+    }
+
     @Override
     public void add(Customer customer) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.persist(customer);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.persist(customer);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public List<Customer> find() {
-        EntityManager em = emf.createEntityManager();
-        try {
-            TypedQuery<Customer> q = em.createQuery("SELECT c FROM Customer c", Customer.class);
+        try (EntityManager em = emf.createEntityManager()) {
+            TypedQuery<Customer> q = em.createQuery(
+                    "SELECT c FROM Customer c", Customer.class);
             return q.getResultList();
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public void update(Customer customer) {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            em.merge(customer);
-            tx.commit();
-        } finally {
-            if (tx.isActive()) tx.rollback();
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+                em.merge(customer);
+                tx.commit();
+            } catch (RuntimeException e) {
+                if (tx.isActive()) tx.rollback();
+                throw e;
+            }
         }
     }
 
     @Override
     public Customer getByPhoneNumber(String phoneNumber) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             TypedQuery<Customer> q = em.createQuery(
-                    "SELECT c FROM Customer c WHERE c.phoneNumber = :phone", Customer.class);
+                    "SELECT c FROM Customer c WHERE c.phoneNumber = :phone",
+                    Customer.class);
             q.setParameter("phone", phoneNumber);
             return q.getResultStream().findFirst().orElse(null);
-        } finally {
-            em.close();
         }
     }
 
     @Override
     public Customer getById(int id) {
-        EntityManager em = emf.createEntityManager();
-        try {
+        try (EntityManager em = emf.createEntityManager()) {
             return em.find(Customer.class, id);
-        } finally {
-            em.close();
         }
     }
 }
