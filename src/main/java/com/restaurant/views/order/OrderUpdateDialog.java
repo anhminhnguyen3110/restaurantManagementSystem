@@ -1,11 +1,7 @@
 package com.restaurant.views.order;
 
 import com.restaurant.constants.OrderType;
-import com.restaurant.controllers.OrderController;
-import com.restaurant.controllers.OrderItemController;
-import com.restaurant.controllers.PaymentController;
-import com.restaurant.controllers.ShipmentController;
-import com.restaurant.controllers.RestaurantTableController;
+import com.restaurant.controllers.*;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.order.UpdateOrderDto;
 import com.restaurant.dtos.orderItem.GetOrderItemDto;
@@ -13,28 +9,28 @@ import com.restaurant.dtos.payment.GetPaymentDto;
 import com.restaurant.dtos.shipment.GetShipmentDto;
 import com.restaurant.models.Order;
 import com.restaurant.models.Payment;
-import com.restaurant.models.Shipment;
 import com.restaurant.models.RestaurantTable;
+import com.restaurant.models.Shipment;
 import com.restaurant.utils.validators.OrderInputValidator;
 import com.restaurant.views.orderItem.OrderItemFormDialog;
 import com.restaurant.views.payment.PaymentFormDialog;
 import com.restaurant.views.shipment.ShipmentFormDialog;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.BorderFactory;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
+import java.util.Objects;
 
 public class OrderUpdateDialog extends JDialog {
     private final OrderController orderController = Injector.getInstance().getInstance(OrderController.class);
     private final OrderItemController itemController = Injector.getInstance().getInstance(OrderItemController.class);
     private final PaymentController paymentController = Injector.getInstance().getInstance(PaymentController.class);
     private final ShipmentController shipmentController = Injector.getInstance().getInstance(ShipmentController.class);
-    private final RestaurantTableController tableController = Injector.getInstance().getInstance(RestaurantTableController.class);
     private final Order order;
     private final Runnable onSaved;
     private final JComboBox<OrderType> cbType = new JComboBox<>(OrderType.values());
@@ -42,21 +38,22 @@ public class OrderUpdateDialog extends JDialog {
     private final JComboBox<RestaurantTable> cbTable = new JComboBox<>();
     private final JButton btnSaveOrder = new JButton("Save Order");
     private final DefaultTableModel itemModel = new DefaultTableModel(
-            new String[] { "ID", "Menu", "Qty", "Total Price", "Notes", "Status" }, 0
+            new String[]{"ID", "Menu", "Qty", "Total Price", "Notes", "Status"}, 0
     ) {
-        @Override public boolean isCellEditable(int r, int c) { return false; }
+        @Override
+        public boolean isCellEditable(int r, int c) {
+            return false;
+        }
     };
     private final JTable itemTable = new JTable(itemModel);
     private final JButton btnAddItem = new JButton("Add");
     private final JButton btnDelItem = new JButton("Delete");
     private final GetPaymentDto payDto = new GetPaymentDto();
-    private Payment currentPayment;
     private final JLabel lblPaymentMethod = new JLabel("Method: ");
     private final JLabel lblPaymentAmount = new JLabel("Amount: ");
     private final JLabel lblPaymentChange = new JLabel("Change: ");
     private final JButton btnEditPayment = new JButton("Add Payment");
     private final GetShipmentDto shipDto = new GetShipmentDto();
-    private Shipment currentShipment;
     private final JLabel lblShipmentService = new JLabel("Service: ");
     private final JLabel lblShipmentShipper = new JLabel("Shipper: ");
     private final JLabel lblShipmentStatus = new JLabel("Status: ");
@@ -64,7 +61,8 @@ public class OrderUpdateDialog extends JDialog {
     private final JButton btnEditShipment = new JButton("Add Shipment");
     private final JPanel shipmentPanel;
     private final JSplitPane rightSplit;
-    private final JSplitPane mainSplit;
+    private Payment currentPayment;
+    private Shipment currentShipment;
     private OrderType originalType;
     private int originalTableId;
 
@@ -77,28 +75,38 @@ public class OrderUpdateDialog extends JDialog {
                 ? existing.getRestaurantTable().getId() : 0;
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
-            @Override public void windowClosed(WindowEvent e) { onSaved.run(); }
+            @Override
+            public void windowClosed(WindowEvent e) {
+                onSaved.run();
+            }
         });
+        RestaurantTableController tableController = Injector.getInstance().getInstance(RestaurantTableController.class);
         for (RestaurantTable t : tableController.findAllTablesForOrder(existing.getRestaurant().getId())) {
             cbTable.addItem(t);
         }
         cbType.setSelectedItem(existing.getOrderType());
         cbTable.setSelectedItem(existing.getRestaurantTable());
-        cbType.addActionListener(e -> { updateTypePanels(); checkSaveEnabled(); });
+        cbType.addActionListener(e -> {
+            updateTypePanels();
+            checkSaveEnabled();
+        });
         cbTable.addActionListener(e -> checkSaveEnabled());
         btnSaveOrder.setEnabled(false);
         btnSaveOrder.addActionListener(e -> onSaveUpdate());
         JPanel orderPanel = new JPanel(new GridLayout(0, 2, 5, 5));
         orderPanel.setBorder(BorderFactory.createTitledBorder("Order Details"));
-        orderPanel.add(new JLabel("Type:")); orderPanel.add(cbType);
-        orderPanel.add(lblTable); orderPanel.add(cbTable);
+        orderPanel.add(new JLabel("Type:"));
+        orderPanel.add(cbType);
+        orderPanel.add(lblTable);
+        orderPanel.add(cbTable);
         orderPanel.add(btnSaveOrder);
         itemTable.setDefaultEditor(Object.class, null);
         JPanel itemPanel = new JPanel(new BorderLayout());
         itemPanel.setBorder(BorderFactory.createTitledBorder("Items"));
         itemPanel.add(new JScrollPane(itemTable), BorderLayout.CENTER);
         JPanel ip = new JPanel();
-        ip.add(btnAddItem); ip.add(btnDelItem);
+        ip.add(btnAddItem);
+        ip.add(btnDelItem);
         itemPanel.add(ip, BorderLayout.SOUTH);
         btnAddItem.addActionListener(e -> {
             if (currentPayment != null) {
@@ -112,19 +120,22 @@ public class OrderUpdateDialog extends JDialog {
                 JOptionPane.showMessageDialog(this, "Cannot modify items after payment is recorded.", "Action not allowed", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            int r = itemTable.getSelectedRow(); if (r < 0) return;
+            int r = itemTable.getSelectedRow();
+            if (r < 0) return;
             int id = (int) itemModel.getValueAt(itemTable.convertRowIndexToModel(r), 0);
             itemController.deleteOrderItem(id);
             loadItems();
         });
         itemTable.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     if (currentPayment != null) {
                         JOptionPane.showMessageDialog(OrderUpdateDialog.this, "Cannot modify items after payment is recorded.", "Action not allowed", JOptionPane.WARNING_MESSAGE);
                         return;
                     }
-                    int r = itemTable.getSelectedRow(); if (r < 0) return;
+                    int r = itemTable.getSelectedRow();
+                    if (r < 0) return;
                     int id = (int) itemModel.getValueAt(itemTable.convertRowIndexToModel(r), 0);
                     new OrderItemFormDialog(owner, order, itemController.getOrderItem(id), OrderUpdateDialog.this::loadItems).setVisible(true);
                 }
@@ -156,14 +167,15 @@ public class OrderUpdateDialog extends JDialog {
         shipmentPanel.add(btnEditShipment);
         rightSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, paymentPanel, shipmentPanel);
         rightSplit.setResizeWeight(0.5);
-        mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, itemPanel, rightSplit);
+        JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, itemPanel, rightSplit);
         mainSplit.setResizeWeight(0.3);
         setLayout(new BorderLayout(5, 5));
         add(orderPanel, BorderLayout.NORTH);
         add(mainSplit, BorderLayout.CENTER);
         JButton btnClose = new JButton("Close");
         btnClose.addActionListener(e -> dispose());
-        JPanel south = new JPanel(); south.add(btnClose);
+        JPanel south = new JPanel();
+        south.add(btnClose);
         add(south, BorderLayout.SOUTH);
         pack();
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
@@ -212,7 +224,7 @@ public class OrderUpdateDialog extends JDialog {
 
     private void checkSaveEnabled() {
         boolean changed = cbType.getSelectedItem() != originalType
-                || ((RestaurantTable) cbTable.getSelectedItem()).getId() != originalTableId;
+                || ((RestaurantTable) Objects.requireNonNull(cbTable.getSelectedItem())).getId() != originalTableId;
         btnSaveOrder.setEnabled(changed);
     }
 
@@ -224,9 +236,11 @@ public class OrderUpdateDialog extends JDialog {
 
     private void loadItems() {
         itemModel.setRowCount(0);
-        itemController.findOrderItems(new GetOrderItemDto() {{ setOrderId(order.getId()); }}).forEach(i -> {
+        itemController.findOrderItems(new GetOrderItemDto() {{
+            setOrderId(order.getId());
+        }}).forEach(i -> {
             double totalPrice = i.getMenuItem().getPrice() * i.getQuantity();
-            itemModel.addRow(new Object[] {
+            itemModel.addRow(new Object[]{
                     i.getId(),
                     i.getMenuItem().getName(),
                     i.getQuantity(),

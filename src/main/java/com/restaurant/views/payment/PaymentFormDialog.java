@@ -66,7 +66,7 @@ public class PaymentFormDialog extends JDialog {
     }
 
     private void updateFields() {
-        boolean isCash = ((PaymentMethod) cbMethod.getSelectedItem()) == PaymentMethod.CASH;
+        boolean isCash = cbMethod.getSelectedItem() == PaymentMethod.CASH;
         lblChange.setVisible(isCash);
         calculateChange();
     }

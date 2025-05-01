@@ -1,11 +1,11 @@
 package com.restaurant.views.user;
 
+import com.restaurant.constants.UserRole;
 import com.restaurant.controllers.UserController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.user.CreateUserDto;
 import com.restaurant.dtos.user.UpdateUserDto;
 import com.restaurant.models.User;
-import com.restaurant.constants.UserRole;
 import com.restaurant.utils.validators.UserInputValidator;
 
 import javax.swing.*;
@@ -20,8 +20,6 @@ public class UserFormDialog extends JDialog {
     private final JCheckBox chkChangePwd = new JCheckBox("Change Password");
     private final JComboBox<UserRole> cmbRole = new JComboBox<>();
     private final JCheckBox chkActive = new JCheckBox("Active");
-    private final JButton btnSave = new JButton("Save");
-    private final JButton btnCancel = new JButton("Cancel");
     private final UserController userController;
     private final User existing;
     private final Runnable onSaved;
@@ -47,25 +45,35 @@ public class UserFormDialog extends JDialog {
         JPanel form;
         if (existing != null) {
             form = new JPanel(new GridLayout(7, 2, 5, 5));
-            form.add(new JLabel("Username:")); form.add(txtUsername);
-            form.add(new JLabel("Name:")); form.add(txtName);
-            form.add(new JLabel("Email:")); form.add(txtEmail);
-            form.add(new JLabel("Change Password:")); form.add(chkChangePwd);
-            form.add(new JLabel("Password:")); form.add(txtPwd);
-            form.add(new JLabel("Role:")); form.add(cmbRole);
-            form.add(new JLabel("Active:")); form.add(chkActive);
+            form.add(new JLabel("Username:"));
+            form.add(txtUsername);
+            form.add(new JLabel("Name:"));
+            form.add(txtName);
+            form.add(new JLabel("Email:"));
+            form.add(txtEmail);
+            form.add(new JLabel("Change Password:"));
+            form.add(chkChangePwd);
         } else {
             form = new JPanel(new GridLayout(6, 2, 5, 5));
-            form.add(new JLabel("Username:")); form.add(txtUsername);
-            form.add(new JLabel("Name:")); form.add(txtName);
-            form.add(new JLabel("Email:")); form.add(txtEmail);
-            form.add(new JLabel("Password:")); form.add(txtPwd);
-            form.add(new JLabel("Role:")); form.add(cmbRole);
-            form.add(new JLabel("Active:")); form.add(chkActive);
+            form.add(new JLabel("Username:"));
+            form.add(txtUsername);
+            form.add(new JLabel("Name:"));
+            form.add(txtName);
+            form.add(new JLabel("Email:"));
+            form.add(txtEmail);
         }
+        form.add(new JLabel("Password:"));
+        form.add(txtPwd);
+        form.add(new JLabel("Role:"));
+        form.add(cmbRole);
+        form.add(new JLabel("Active:"));
+        form.add(chkActive);
 
         JPanel buttons = new JPanel();
-        buttons.add(btnSave); buttons.add(btnCancel);
+        JButton btnSave = new JButton("Save");
+        buttons.add(btnSave);
+        JButton btnCancel = new JButton("Cancel");
+        buttons.add(btnCancel);
         btnSave.addActionListener(e -> onSave());
         btnCancel.addActionListener(e -> dispose());
 

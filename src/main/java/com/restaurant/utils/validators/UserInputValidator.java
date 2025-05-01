@@ -2,6 +2,7 @@ package com.restaurant.utils.validators;
 
 import com.restaurant.dtos.user.CreateUserDto;
 import com.restaurant.dtos.user.UpdateUserDto;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;

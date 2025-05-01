@@ -1,20 +1,21 @@
 package com.restaurant.views.orderItem;
 
+import com.restaurant.constants.OrderItemStatus;
 import com.restaurant.controllers.MenuItemController;
 import com.restaurant.controllers.OrderItemController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.orderItem.CreateOrderItemDto;
 import com.restaurant.dtos.orderItem.UpdateOrderItemDto;
+import com.restaurant.models.MenuItem;
 import com.restaurant.models.Order;
 import com.restaurant.models.OrderItem;
-import com.restaurant.models.MenuItem;
-import com.restaurant.constants.OrderItemStatus;
 import com.restaurant.utils.validators.OrderItemInputValidator;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.util.List;
+import java.util.Objects;
 
 public class OrderItemFormDialog extends JDialog {
     private final JComboBox<MenuItem> cbMenuItem = new JComboBox<>();
@@ -23,22 +24,20 @@ public class OrderItemFormDialog extends JDialog {
     private final JSpinner spQty = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
     private final JTextArea taNotes = new JTextArea(3, 20);
     private final JComboBox<OrderItemStatus> cbStatus = new JComboBox<>(OrderItemStatus.values());
-    private final JButton btnSave = new JButton("Save"), btnCancel = new JButton("Cancel");
 
     private final OrderItemController orderItemController;
-    private final MenuItemController menuItemController;
 
     public OrderItemFormDialog(Frame owner, Order order, OrderItem existing, Runnable onSaved) {
         super(owner, existing == null ? "Add Item" : "Edit Item", true);
         this.orderItemController = Injector.getInstance().getInstance(OrderItemController.class);
-        this.menuItemController = Injector.getInstance().getInstance(MenuItemController.class);
+        MenuItemController menuItemController = Injector.getInstance().getInstance(MenuItemController.class);
 
         List<MenuItem> list = menuItemController.findMenuItemsByRestaurantId(order.getRestaurant().getId());
         for (MenuItem m : list) cbMenuItem.addItem(m);
 
         cbMenuItem.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f){
+            public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
                 super.getListCellRendererComponent(l, v, i, s, f);
                 if (v instanceof MenuItem m) setText(m.getName());
                 return this;
@@ -68,15 +67,24 @@ public class OrderItemFormDialog extends JDialog {
         }
 
         JPanel form = new JPanel(new GridLayout(0, 2, 5, 5));
-        form.add(new JLabel("Menu Item:"));    form.add(cbMenuItem);
-        form.add(new JLabel("Price:"));        form.add(lblPrice);
-        form.add(new JLabel("Description:"));  form.add(new JScrollPane(taDescription));
-        form.add(new JLabel("Quantity:"));     form.add(spQty);
-        form.add(new JLabel("Notes:"));        form.add(new JScrollPane(taNotes));
-        form.add(new JLabel("Status:"));       form.add(cbStatus);
+        form.add(new JLabel("Menu Item:"));
+        form.add(cbMenuItem);
+        form.add(new JLabel("Price:"));
+        form.add(lblPrice);
+        form.add(new JLabel("Description:"));
+        form.add(new JScrollPane(taDescription));
+        form.add(new JLabel("Quantity:"));
+        form.add(spQty);
+        form.add(new JLabel("Notes:"));
+        form.add(new JScrollPane(taNotes));
+        form.add(new JLabel("Status:"));
+        form.add(cbStatus);
 
         JPanel buttons = new JPanel();
-        buttons.add(btnSave); buttons.add(btnCancel);
+        JButton btnSave = new JButton("Save");
+        buttons.add(btnSave);
+        JButton btnCancel = new JButton("Cancel");
+        buttons.add(btnCancel);
 
         getContentPane().add(form, BorderLayout.CENTER);
         getContentPane().add(buttons, BorderLayout.SOUTH);
@@ -108,14 +116,14 @@ public class OrderItemFormDialog extends JDialog {
             if (existing == null) {
                 CreateOrderItemDto cd = new CreateOrderItemDto();
                 cd.setOrderId(order.getId());
-                cd.setMenuItemId(m.getId());
+                cd.setMenuItemId(Objects.requireNonNull(m).getId());
                 cd.setQuantity(qty);
                 cd.setCustomization(notes);
                 orderItemController.createOrderItem(cd);
             } else {
                 UpdateOrderItemDto ud = new UpdateOrderItemDto();
                 ud.setId(existing.getId());
-                ud.setMenuItemId(m.getId());
+                ud.setMenuItemId(Objects.requireNonNull(m).getId());
                 ud.setQuantity(qty);
                 ud.setCustomization(notes);
                 ud.setStatus(status);

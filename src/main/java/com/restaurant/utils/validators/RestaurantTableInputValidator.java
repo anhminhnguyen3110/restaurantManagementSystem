@@ -33,6 +33,6 @@ public class RestaurantTableInputValidator {
     }
 
     public static List<String> validate(UpdateRestaurantTableDto dto) {
-        return validate((CreateRestaurantTableDto)dto);
+        return validate((CreateRestaurantTableDto) dto);
     }
 }

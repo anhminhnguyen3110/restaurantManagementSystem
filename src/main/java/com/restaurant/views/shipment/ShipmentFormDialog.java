@@ -63,22 +63,31 @@ public class ShipmentFormDialog extends JDialog {
         List<User> shippers = userController.findAllShippers();
         for (User u : shippers) cbShipper.addItem(u);
         cbShipper.setRenderer(new DefaultListCellRenderer() {
-            @Override public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean foc) {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean foc) {
                 super.getListCellRendererComponent(list, value, index, sel, foc);
                 if (value instanceof User u) setText(u.getName());
                 return this;
             }
         });
         cbShipper.setEnabled(false);
-        JPanel form = new JPanel(new GridLayout(0,2,5,5));
-        form.add(new JLabel("Service:")); form.add(cbService);
-        form.add(new JLabel("Shipper:")); form.add(cbShipper);
-        form.add(new JLabel("Customer Name:")); form.add(txtName);
-        form.add(new JLabel("Phone:")); form.add(txtPhone);
-        form.add(new JLabel("Email:")); form.add(txtEmail);
-        form.add(new JLabel("Address:")); form.add(txtAddress);
-        form.add(new JLabel("Status:")); form.add(cbStatus);
-        form.add(new JLabel("Tracking #:")); form.add(txtTracking);
+        JPanel form = new JPanel(new GridLayout(0, 2, 5, 5));
+        form.add(new JLabel("Service:"));
+        form.add(cbService);
+        form.add(new JLabel("Shipper:"));
+        form.add(cbShipper);
+        form.add(new JLabel("Customer Name:"));
+        form.add(txtName);
+        form.add(new JLabel("Phone:"));
+        form.add(txtPhone);
+        form.add(new JLabel("Email:"));
+        form.add(txtEmail);
+        form.add(new JLabel("Address:"));
+        form.add(txtAddress);
+        form.add(new JLabel("Status:"));
+        form.add(cbStatus);
+        form.add(new JLabel("Tracking #:"));
+        form.add(txtTracking);
         cbStatus.setEnabled(false);
         txtTracking.setEnabled(false);
         JPanel buttons = new JPanel();
@@ -105,7 +114,6 @@ public class ShipmentFormDialog extends JDialog {
         String email = txtEmail.getText().trim();
         String address = txtAddress.getText().trim();
         ShipmentStatus status = isUpdate ? (ShipmentStatus) cbStatus.getSelectedItem() : null;
-        String tracking = isUpdate ? txtTracking.getText().trim() : null;
         var errors = ShipmentInputValidator.validate(service, shipperId, name, phone, email, address);
         if (!errors.isEmpty()) {
             JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);

@@ -3,17 +3,7 @@ package com.restaurant.utils;
 import com.restaurant.constants.*;
 import com.restaurant.di.Inject;
 import com.restaurant.di.Injectable;
-import com.restaurant.models.Booking;
-import com.restaurant.models.Customer;
-import com.restaurant.models.Menu;
-import com.restaurant.models.MenuItem;
-import com.restaurant.models.Order;
-import com.restaurant.models.OrderItem;
-import com.restaurant.models.Payment;
-import com.restaurant.models.Restaurant;
-import com.restaurant.models.RestaurantTable;
-import com.restaurant.models.Shipment;
-import com.restaurant.models.User;
+import com.restaurant.models.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.EntityTransaction;
@@ -36,27 +26,30 @@ public class DataSeeder {
     }
 
     public void seed() {
-        EntityManager em = emf.createEntityManager();
-        EntityTransaction tx = em.getTransaction();
-        try {
-            tx.begin();
-            List<Restaurant> restaurants = seedRestaurants(em);
-            List<Menu> menus = seedMenus(em, restaurants);
-            List<MenuItem> menuItems = seedMenuItems(em, menus);
-            List<RestaurantTable> tables = seedTables(em, restaurants);
-            List<User> users = seedUsers(em);
-            List<Customer> customers = seedCustomers(em);
-            seedBookings(em, customers, tables);
-            List<Order> orders = seedOrders(em, tables, menuItems);
-            seedPayments(em, orders);
-            seedShipments(em, orders, users, customers);
-            tx.commit();
-            System.out.println("✔︎ Database seeded successfully");
-        } catch (Exception e) {
-            if (tx.isActive()) tx.rollback();
-            throw new RuntimeException("Seeding failed", e);
-        } finally {
-            em.close();
+        try (EntityManager em = emf.createEntityManager()) {
+            EntityTransaction tx = em.getTransaction();
+            try {
+                tx.begin();
+
+                List<Restaurant> restaurants = seedRestaurants(em);
+                List<Menu> menus = seedMenus(em, restaurants);
+                List<MenuItem> menuItems = seedMenuItems(em, menus);
+                List<RestaurantTable> tables = seedTables(em, restaurants);
+                List<User> users = seedUsers(em);
+                List<Customer> customers = seedCustomers(em);
+                seedBookings(em, customers, tables);
+                List<Order> orders = seedOrders(em, tables, menuItems);
+                seedPayments(em, orders);
+                seedShipments(em, orders, users, customers);
+
+                tx.commit();
+                System.out.println("✔︎ Database seeded successfully");
+            } catch (RuntimeException e) {
+                if (tx.isActive()) {
+                    tx.rollback();
+                }
+                throw new RuntimeException("Seeding failed", e);
+            }
         }
     }
 
@@ -214,8 +207,7 @@ public class DataSeeder {
         return customers;
     }
 
-    private List<Booking> seedBookings(EntityManager em, List<Customer> customers, List<RestaurantTable> tables) {
-        List<Booking> bookings = new ArrayList<>();
+    private void seedBookings(EntityManager em, List<Customer> customers, List<RestaurantTable> tables) {
         BookingStatus[] statuses = BookingStatus.values();
         BookingTimeSlot[] slots = BookingTimeSlot.values();
         for (int i = 0; i < 50; i++) {
@@ -231,9 +223,7 @@ public class DataSeeder {
             b.setCustomer(customers.get(random.nextInt(customers.size())));
             b.setStatus(statuses[random.nextInt(statuses.length)]);
             em.persist(b);
-            bookings.add(b);
         }
-        return bookings;
     }
 
     private List<Order> seedOrders(EntityManager em, List<RestaurantTable> tables, List<MenuItem> menuItems) {

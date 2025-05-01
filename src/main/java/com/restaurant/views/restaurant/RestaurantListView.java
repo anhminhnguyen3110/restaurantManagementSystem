@@ -1,10 +1,10 @@
 package com.restaurant.views.restaurant;
 
+import com.restaurant.constants.RestaurantStatus;
 import com.restaurant.controllers.RestaurantController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.restaurant.GetRestaurantDto;
 import com.restaurant.models.Restaurant;
-import com.restaurant.constants.RestaurantStatus;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -25,9 +25,6 @@ public class RestaurantListView extends JPanel {
     private final JTextField txtName = new JTextField(8);
     private final JTextField txtAddress = new JTextField(8);
     private final JComboBox<RestaurantStatus> cmbStatus;
-    private final JButton btnFilter = new JButton("Filter");
-    private final JButton btnReset  = new JButton("Reset");
-    private final JButton btnAdd    = new JButton("Add");
     private final GetRestaurantDto currentDto = new GetRestaurantDto();
     private final JButton btnPrev = new JButton("Previous");
     private final JButton btnNext = new JButton("Next");
@@ -54,44 +51,57 @@ public class RestaurantListView extends JPanel {
             }
         });
 
-        setLayout(new BorderLayout(10,10));
+        setLayout(new BorderLayout(10, 10));
         JPanel top = new JPanel();
-        top.add(new JLabel("Name:"));      top.add(txtName);
-        top.add(new JLabel("Address:"));   top.add(txtAddress);
-        top.add(new JLabel("Status:"));    top.add(cmbStatus);
-        top.add(btnFilter);                top.add(btnReset);
+        top.add(new JLabel("Name:"));
+        top.add(txtName);
+        top.add(new JLabel("Address:"));
+        top.add(txtAddress);
+        top.add(new JLabel("Status:"));
+        top.add(cmbStatus);
+        JButton btnFilter = new JButton("Filter");
+        top.add(btnFilter);
+        JButton btnReset = new JButton("Reset");
+        top.add(btnReset);
+        JButton btnAdd = new JButton("Add");
         top.add(btnAdd);
         add(top, BorderLayout.NORTH);
 
         btnFilter.addActionListener(e -> applyFilters());
-        btnReset .addActionListener(e -> { resetFilters(); loadData(); });
-        btnAdd   .addActionListener(e -> openForm(null));
+        btnReset.addActionListener(e -> {
+            resetFilters();
+            loadData();
+        });
+        btnAdd.addActionListener(e -> openForm(null));
 
         model = new DefaultTableModel(COLUMNS, 0) {
-            @Override public boolean isCellEditable(int r, int c) {
+            @Override
+            public boolean isCellEditable(int r, int c) {
                 return false;
             }
         };
         table = new JTable(model);
         table.setRowHeight(24);
         table.setFillsViewportHeight(true);
-        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer(){
-            @Override public Component getTableCellRendererComponent(
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(
                     JTable tbl, Object val, boolean sel, boolean foc, int r, int c
             ) {
                 super.getTableCellRendererComponent(tbl, val, sel, foc, r, c);
                 setBackground(sel ? tbl.getSelectionBackground()
-                        : (r%2==0 ? Color.WHITE : new Color(245,245,245)));
+                        : (r % 2 == 0 ? Color.WHITE : new Color(245, 245, 245)));
                 setForeground(Color.DARK_GRAY);
                 return this;
             }
         });
 
-        table.addMouseListener(new MouseAdapter(){
-            @Override public void mouseClicked(MouseEvent e){
-                if(e.getClickCount()==2){
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
                     Restaurant r = getSelected();
-                    if(r!=null) openForm(r);
+                    if (r != null) openForm(r);
                 }
             }
         });
@@ -101,19 +111,18 @@ public class RestaurantListView extends JPanel {
         paging.add(btnPrev);
         paging.add(btnNext);
         btnPrev.addActionListener(e -> {
-            if (currentDto.getPage()>0) {
-                currentDto.setPage(currentDto.getPage()-1);
+            if (currentDto.getPage() > 0) {
+                currentDto.setPage(currentDto.getPage() - 1);
                 loadData();
             }
         });
         btnNext.addActionListener(e -> {
-            currentDto.setPage(currentDto.getPage()+1);
+            currentDto.setPage(currentDto.getPage() + 1);
             loadData();
         });
         add(paging, BorderLayout.SOUTH);
 
         resetFilters();
-        loadData();
     }
 
     private void applyFilters() {
@@ -121,7 +130,7 @@ public class RestaurantListView extends JPanel {
                 ? null : txtName.getText().trim());
         currentDto.setAddress(txtAddress.getText().trim().isEmpty()
                 ? null : txtAddress.getText().trim());
-        currentDto.setStatus((RestaurantStatus)cmbStatus.getSelectedItem());
+        currentDto.setStatus((RestaurantStatus) cmbStatus.getSelectedItem());
         currentDto.setPage(0);
         loadData();
     }
@@ -141,7 +150,7 @@ public class RestaurantListView extends JPanel {
     public void loadData() {
         model.setRowCount(0);
         List<Restaurant> list = controller.findRestaurants(currentDto);
-        for (Restaurant r: list) {
+        for (Restaurant r : list) {
             model.addRow(new Object[]{
                     r.getId(),
                     r.getName(),
@@ -151,25 +160,25 @@ public class RestaurantListView extends JPanel {
                     r.getMaxY()
             });
         }
-        btnPrev.setEnabled(currentDto.getPage()>0);
-        btnNext.setEnabled(list.size()==currentDto.getSize());
+        btnPrev.setEnabled(currentDto.getPage() > 0);
+        btnNext.setEnabled(list.size() == currentDto.getSize());
     }
 
     private Restaurant getSelected() {
         int r = table.getSelectedRow();
-        if(r<0) {
+        if (r < 0) {
             JOptionPane.showMessageDialog(this,
                     "Please select a restaurant.", "Info",
                     JOptionPane.INFORMATION_MESSAGE);
             return null;
         }
-        int id = (int)model.getValueAt(table.convertRowIndexToModel(r), 0);
+        int id = (int) model.getValueAt(table.convertRowIndexToModel(r), 0);
         return controller.getRestaurantById(id);
     }
 
     private void openForm(Restaurant existing) {
         RestaurantFormDialog dlg = new RestaurantFormDialog(
-                (Frame)SwingUtilities.getWindowAncestor(this),
+                (Frame) SwingUtilities.getWindowAncestor(this),
                 existing,
                 this::loadData
         );

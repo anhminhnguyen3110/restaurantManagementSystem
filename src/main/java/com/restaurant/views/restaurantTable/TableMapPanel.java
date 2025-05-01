@@ -51,7 +51,7 @@ public class TableMapPanel extends JPanel {
                 int y0 = Math.min(dragStartCell.y, cell.y);
                 int x1 = Math.max(dragStartCell.x, cell.x);
                 int y1 = Math.max(dragStartCell.y, cell.y);
-                if (!regionOverlapsTable(x0, y0, x1, y1)) {
+                if (regionOverlapsTable(x0, y0, x1, y1)) {
                     listener.onNewRegion(x0, y0, x1, y1);
                 } else {
                     Toolkit.getDefaultToolkit().beep();
@@ -71,7 +71,7 @@ public class TableMapPanel extends JPanel {
                 int y0 = Math.min(dragStartCell.y, cell.y);
                 int x1 = Math.max(dragStartCell.x, cell.x);
                 int y1 = Math.max(dragStartCell.y, cell.y);
-                if (!regionOverlapsTable(x0, y0, x1, y1)) {
+                if (regionOverlapsTable(x0, y0, x1, y1)) {
                     dragCurrentCell = cell;
                     repaint();
                 } else {
@@ -148,10 +148,10 @@ public class TableMapPanel extends JPanel {
             int tx0 = t.getStartX(), ty0 = t.getStartY();
             int tx1 = t.getEndX(), ty1 = t.getEndY();
             if (!(ex < tx0 || sx > tx1 || ey < ty0 || sy > ty1)) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     public interface Listener {

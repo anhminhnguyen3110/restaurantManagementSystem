@@ -36,7 +36,6 @@ public class BookingFormDialog extends JDialog {
     private final JButton btnCancel = new JButton("Cancel");
 
     private final BookingController bookingController;
-    private final RestaurantController restaurantController;
     private final RestaurantTableController tableController;
     private final Booking existing;
     private final Runnable onSaved;
@@ -49,7 +48,7 @@ public class BookingFormDialog extends JDialog {
         super(owner, existing == null ? "New Booking" : "Edit Booking", true);
 
         this.bookingController = Injector.getInstance().getInstance(BookingController.class);
-        this.restaurantController = Injector.getInstance()
+        RestaurantController restaurantController = Injector.getInstance()
                 .getInstance(RestaurantController.class);
         this.tableController = Injector.getInstance()
                 .getInstance(RestaurantTableController.class);
@@ -113,7 +112,7 @@ public class BookingFormDialog extends JDialog {
         f.add(new JLabel("Name:"));
         f.add(nameField);
         f.add(new JLabel("Phone:"));
-        if(existing == null) {
+        if (existing == null) {
             f.add(phoneField);
         } else {
             phoneField.setEnabled(false);
@@ -121,7 +120,7 @@ public class BookingFormDialog extends JDialog {
         f.add(phoneField);
         f.add(new JLabel("Email:"));
         f.add(emailField);
-        if(existing != null) {
+        if (existing != null) {
             f.add(new JLabel("Status:"));
             f.add(statusCombo);
         }
@@ -173,7 +172,7 @@ public class BookingFormDialog extends JDialog {
                 .atZone(ZoneId.systemDefault())
                 .toLocalDate();
 
-        String name  = nameField.getText().trim(),
+        String name = nameField.getText().trim(),
                 phone = phoneField.getText().trim(),
                 email = emailField.getText().trim();
         BookingTimeSlot s = (BookingTimeSlot) startCombo.getSelectedItem(),
@@ -212,7 +211,7 @@ public class BookingFormDialog extends JDialog {
             dto.setDate(date);
             dto.setStartTime(s);
             dto.setEndTime(e);
-            dto.setTableId(t != null ? t.getId() : null);
+            dto.setTableId(t != null ? t.getId() : 0);
             dto.setStatus(st);
 
             List<String> errors = BookingInputValidator.validate(dto);
@@ -225,6 +224,7 @@ public class BookingFormDialog extends JDialog {
                 );
                 return;
             }
+
             bookingController.updateBooking(dto);
         }
 

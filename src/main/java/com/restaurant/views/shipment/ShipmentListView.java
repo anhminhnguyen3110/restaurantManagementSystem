@@ -1,11 +1,11 @@
 package com.restaurant.views.shipment;
 
+import com.restaurant.constants.ShipmentService;
+import com.restaurant.constants.ShipmentStatus;
 import com.restaurant.controllers.ShipmentController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.shipment.GetShipmentDto;
 import com.restaurant.models.Shipment;
-import com.restaurant.constants.ShipmentService;
-import com.restaurant.constants.ShipmentStatus;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -30,11 +30,10 @@ public class ShipmentListView extends JPanel {
     private final JTextField tfTrackingNumber = new JTextField(10);
     private final JButton btnPrev = new JButton("Previous");
     private final JButton btnNext = new JButton("Next");
-    private final JButton btnReset = new JButton("Reset");
     private List<Shipment> currentShipments;
 
     public ShipmentListView() {
-        super(new BorderLayout(5,5));
+        super(new BorderLayout(5, 5));
         shipmentController = Injector.getInstance().getInstance(ShipmentController.class);
 
         JPanel filters = new JPanel();
@@ -54,14 +53,18 @@ public class ShipmentListView extends JPanel {
         filters.add(tfCustomerName);
         filters.add(new JLabel("Tracking:"));
         filters.add(tfTrackingNumber);
+        JButton btnReset = new JButton("Reset");
         filters.add(btnReset);
         add(filters, BorderLayout.NORTH);
 
         model = new DefaultTableModel(
-                new String[]{"ID","Order ID","Restaurant","Service","Shipper","Customer","Status","Tracking"},
+                new String[]{"ID", "Order ID", "Restaurant", "Service", "Shipper", "Customer", "Status", "Tracking"},
                 0
         ) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         table = new JTable(model);
         add(new JScrollPane(table), BorderLayout.CENTER);
@@ -71,33 +74,38 @@ public class ShipmentListView extends JPanel {
         paging.add(btnNext);
         add(paging, BorderLayout.SOUTH);
 
-        cbServiceFilter.addItemListener(e -> { if (e.getStateChange() == ItemEvent.SELECTED) applyFilters(); });
-        cbStatusFilter.addItemListener(e -> { if (e.getStateChange() == ItemEvent.SELECTED) applyFilters(); });
+        cbServiceFilter.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) applyFilters();
+        });
+        cbStatusFilter.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) applyFilters();
+        });
         spinnerOrderId.addChangeListener(e -> applyFilters());
         DocumentListener dl = new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { applyFilters(); }
-            public void removeUpdate(DocumentEvent e) { applyFilters(); }
-            public void changedUpdate(DocumentEvent e) { applyFilters(); }
+            public void insertUpdate(DocumentEvent e) {
+                applyFilters();
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                applyFilters();
+            }
+
+            public void changedUpdate(DocumentEvent e) {
+                applyFilters();
+            }
         };
         tfShipperName.getDocument().addDocumentListener(dl);
         tfCustomerName.getDocument().addDocumentListener(dl);
         tfTrackingNumber.getDocument().addDocumentListener(dl);
 
         btnReset.addActionListener(e -> {
-            cbServiceFilter.setSelectedItem(null);
-            cbStatusFilter.setSelectedItem(null);
-            spinnerOrderId.setValue(0);
-            tfShipperName.setText("");
-            tfCustomerName.setText("");
-            tfTrackingNumber.setText("");
-            dto.setSortBy("id");
-            dto.setSortDir("asc");
-            dto.setPage(0);
-            applyFilters();
+            resetFilters();
+            loadData();
         });
 
         table.getTableHeader().addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 int col = table.columnAtPoint(e.getPoint());
                 String key = switch (col) {
                     case 1 -> "order.id";
@@ -111,7 +119,10 @@ public class ShipmentListView extends JPanel {
                 };
                 if (key != null) {
                     if (key.equals(dto.getSortBy())) dto.setSortDir(dto.getSortDir().equals("asc") ? "desc" : "asc");
-                    else { dto.setSortBy(key); dto.setSortDir("asc"); }
+                    else {
+                        dto.setSortBy(key);
+                        dto.setSortDir("asc");
+                    }
                     dto.setPage(0);
                     loadData();
                 }
@@ -119,7 +130,8 @@ public class ShipmentListView extends JPanel {
         });
 
         table.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2 && table.getSelectedRow() != -1) {
                     int row = table.convertRowIndexToModel(table.getSelectedRow());
                     Shipment s = currentShipments.get(row);
@@ -140,11 +152,7 @@ public class ShipmentListView extends JPanel {
             loadData();
         });
 
-        dto.setPage(0);
-        dto.setSize(20);
-        dto.setSortBy("id");
-        dto.setSortDir("asc");
-        applyFilters();
+        resetFilters();
     }
 
     private void applyFilters() {
@@ -159,6 +167,24 @@ public class ShipmentListView extends JPanel {
         dto.setTrackingNumber(tracking.isEmpty() ? null : tracking);
         dto.setPage(0);
         loadData();
+    }
+
+    private void resetFilters() {
+        cbServiceFilter.setSelectedIndex(0);
+        cbStatusFilter.setSelectedIndex(0);
+        spinnerOrderId.setValue(0);
+        tfShipperName.setText("");
+        tfCustomerName.setText("");
+        tfTrackingNumber.setText("");
+        dto.setServiceType(null);
+        dto.setStatus(null);
+        dto.setOrderId(0);
+        dto.setShipperName(null);
+        dto.setCustomerName(null);
+        dto.setTrackingNumber(null);
+        dto.setSortBy("id");
+        dto.setSortDir("asc");
+        dto.setPage(0);
     }
 
     public void loadData() {

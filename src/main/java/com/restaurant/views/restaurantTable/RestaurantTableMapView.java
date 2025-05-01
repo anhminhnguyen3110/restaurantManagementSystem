@@ -21,16 +21,14 @@ import java.util.List;
 import java.util.Set;
 
 public class RestaurantTableMapView extends JPanel {
-    private final RestaurantController restaurantController;
     private final RestaurantTableController tableController;
     private final JComboBox<Restaurant> cmbRestaurant = new JComboBox<>();
     private final JXDatePicker datePicker = new JXDatePicker();
     private final JComboBox<BookingTimeSlot> cbTime;
-    private final JButton btnReset = new JButton("Reset");
     private final JPanel mapContainer = new JPanel(new GridBagLayout());
 
     public RestaurantTableMapView() {
-        restaurantController = Injector.getInstance().getInstance(RestaurantController.class);
+        RestaurantController restaurantController = Injector.getInstance().getInstance(RestaurantController.class);
         tableController = Injector.getInstance().getInstance(RestaurantTableController.class);
 
         List<Restaurant> rests = restaurantController.findAllRestaurants();
@@ -55,9 +53,13 @@ public class RestaurantTableMapView extends JPanel {
         cbTime.setSelectedIndex(0);
 
         JPanel top = new JPanel();
-        top.add(new JLabel("Restaurant:")); top.add(cmbRestaurant);
-        top.add(new JLabel("Date:"));       top.add(datePicker);
-        top.add(new JLabel("Time:"));       top.add(cbTime);
+        top.add(new JLabel("Restaurant:"));
+        top.add(cmbRestaurant);
+        top.add(new JLabel("Date:"));
+        top.add(datePicker);
+        top.add(new JLabel("Time:"));
+        top.add(cbTime);
+        JButton btnReset = new JButton("Reset");
         top.add(btnReset);
         setLayout(new BorderLayout(5, 5));
         add(top, BorderLayout.NORTH);
@@ -73,8 +75,6 @@ public class RestaurantTableMapView extends JPanel {
             cbTime.setSelectedIndex(0);
             loadData();
         });
-
-        loadData();
     }
 
     public void loadData() {
@@ -97,23 +97,32 @@ public class RestaurantTableMapView extends JPanel {
                 availIds.add(t.getId());
             }
         }
+        TableMapPanel map = getTableMapPanel(r, all, availIds);
+        mapContainer.removeAll();
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        mapContainer.add(map, gbc);
+        mapContainer.revalidate();
+        mapContainer.repaint();
+    }
+
+    private TableMapPanel getTableMapPanel(Restaurant r, List<RestaurantTable> all, Set<Integer> availIds) {
         TableMapPanel.Listener listener = new TableMapPanel.Listener() {
             @Override
             public void onExistingTable(RestaurantTable table, int cx, int cy) {
                 openTableForm(table, r.getId(), cx, cy);
             }
+
             @Override
             public void onNewRegion(int sx, int sy, int ex, int ey) {
                 openTableForm(null, r.getId(), sx, sy, ex, ey);
             }
         };
-        TableMapPanel map = new TableMapPanel(r.getMaxX(), r.getMaxY(), all, availIds, listener);
-        mapContainer.removeAll();
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1.0; gbc.weighty = 1.0; gbc.anchor = GridBagConstraints.CENTER;
-        mapContainer.add(map, gbc);
-        mapContainer.revalidate();
-        mapContainer.repaint();
+        return new TableMapPanel(r.getMaxX(), r.getMaxY(), all, availIds, listener);
     }
 
     private void openTableForm(RestaurantTable existing, int restaurantId, int... coords) {

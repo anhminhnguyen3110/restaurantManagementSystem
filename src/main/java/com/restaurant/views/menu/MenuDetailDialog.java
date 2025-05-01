@@ -1,9 +1,9 @@
 package com.restaurant.views.menu;
 
 import com.restaurant.controllers.MenuController;
+import com.restaurant.di.Injector;
 import com.restaurant.models.Menu;
 import com.restaurant.models.MenuItem;
-import com.restaurant.di.Injector;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

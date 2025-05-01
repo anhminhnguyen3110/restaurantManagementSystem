@@ -11,45 +11,53 @@ import com.restaurant.dtos.shipment.GetShipmentDto;
 import com.restaurant.models.MenuItem;
 import com.restaurant.models.Order;
 import com.restaurant.models.OrderItem;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public class AddOrderItemDialog extends JDialog {
     private final JComboBox<MenuItem> cbItem = new JComboBox<>();
-    private final JSpinner spQty = new JSpinner(new SpinnerNumberModel(1,1,100,1));
+    private final JSpinner spQty = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
     private final JTextField txtCust = new JTextField(15);
-    private final JButton btnAdd = new JButton("Add"), btnCancel = new JButton("Cancel");
     private final OrderItemController itemCtrl;
     private final ShipmentController shipmentCtrl;
     private final OrderController orderController;
     private final Order order;
-    private final Consumer<Void> onAdded;
 
     public AddOrderItemDialog(Dialog owner, Order order, Consumer<Void> onAdded) {
         super(owner, "Add Item to Order", true);
         this.order = order;
-        this.onAdded = onAdded;
         itemCtrl = Injector.getInstance().getInstance(OrderItemController.class);
         shipmentCtrl = Injector.getInstance().getInstance(ShipmentController.class);
         orderController = Injector.getInstance().getInstance(OrderController.class);
         List<MenuItem> items = Injector.getInstance()
                 .getInstance(MenuItemController.class)
-                .findMenuItems(new com.restaurant.dtos.menuItem.GetMenuItemsDto(){{ setPage(0); setSize(100); }});
+                .findMenuItems(new com.restaurant.dtos.menuItem.GetMenuItemsDto() {{
+                    setPage(0);
+                    setSize(100);
+                }});
         items.forEach(cbItem::addItem);
-        JPanel f = new JPanel(new GridLayout(3,2,5,5));
-        f.add(new JLabel("Item:"));          f.add(cbItem);
-        f.add(new JLabel("Quantity:"));      f.add(spQty);
-        f.add(new JLabel("Customization:")); f.add(txtCust);
+        JPanel f = new JPanel(new GridLayout(3, 2, 5, 5));
+        f.add(new JLabel("Item:"));
+        f.add(cbItem);
+        f.add(new JLabel("Quantity:"));
+        f.add(spQty);
+        f.add(new JLabel("Customization:"));
+        f.add(txtCust);
         JPanel b = new JPanel();
-        b.add(btnAdd); b.add(btnCancel);
+        JButton btnAdd = new JButton("Add");
+        b.add(btnAdd);
+        JButton btnCancel = new JButton("Cancel");
+        b.add(btnCancel);
         btnAdd.addActionListener(e -> {
             CreateOrderItemDto dto = new CreateOrderItemDto();
             dto.setOrderId(order.getId());
-            dto.setMenuItemId(((MenuItem) cbItem.getSelectedItem()).getId());
+            dto.setMenuItemId(((MenuItem) Objects.requireNonNull(cbItem.getSelectedItem())).getId());
             dto.setQuantity((int) spQty.getValue());
             dto.setCustomization(txtCust.getText().trim());
             itemCtrl.createOrderItem(dto);
@@ -57,8 +65,9 @@ public class AddOrderItemDialog extends JDialog {
             dispose();
         });
         btnCancel.addActionListener(e -> onCancel());
-        addWindowListener(new WindowAdapter(){
-            @Override public void windowClosing(WindowEvent e) {
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
                 onCancel();
             }
         });

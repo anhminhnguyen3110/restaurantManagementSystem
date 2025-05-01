@@ -1,10 +1,9 @@
 package com.restaurant.utils.validators;
 
-import com.restaurant.models.Order;
-import com.restaurant.constants.OrderType;
 import com.restaurant.constants.PaymentMethod;
-import java.util.List;
+
 import java.util.ArrayList;
+import java.util.List;
 
 public class PaymentInputValidator {
     public static List<String> validate(double totolPrice, PaymentMethod method, double payAmount) {

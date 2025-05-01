@@ -1,11 +1,11 @@
 package com.restaurant.views.payment;
 
+import com.restaurant.constants.PaymentMethod;
+import com.restaurant.constants.PaymentStatus;
 import com.restaurant.controllers.PaymentController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.payment.GetPaymentDto;
 import com.restaurant.models.Payment;
-import com.restaurant.constants.PaymentMethod;
-import com.restaurant.constants.PaymentStatus;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -25,10 +25,9 @@ public class PaymentListView extends JPanel {
     private final JSpinner spinnerOrderId = new JSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1));
     private final JButton btnPrev = new JButton("Previous");
     private final JButton btnNext = new JButton("Next");
-    private final JButton btnReset = new JButton("Reset");
 
     public PaymentListView() {
-        super(new BorderLayout(5,5));
+        super(new BorderLayout(5, 5));
         paymentController = Injector.getInstance().getInstance(PaymentController.class);
 
         JPanel filters = new JPanel();
@@ -45,14 +44,18 @@ public class PaymentListView extends JPanel {
         filters.add(new JLabel("Order ID:"));
         filters.add(spinnerOrderId);
 
+        JButton btnReset = new JButton("Reset");
         filters.add(btnReset);
         add(filters, BorderLayout.NORTH);
 
         model = new DefaultTableModel(
-                new String[]{"ID","Order ID","Restaurant","Method","Paid","Change","Status"},
+                new String[]{"ID", "Order ID", "Restaurant", "Method", "Paid", "Change", "Status"},
                 0
         ) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         table = new JTable(model);
         add(new JScrollPane(table), BorderLayout.CENTER);
@@ -62,22 +65,22 @@ public class PaymentListView extends JPanel {
         paging.add(btnNext);
         add(paging, BorderLayout.SOUTH);
 
-        cbMethodFilter.addItemListener(e -> { if (e.getStateChange() == ItemEvent.SELECTED) applyFilters(); });
-        cbStatusFilter.addItemListener(e -> { if (e.getStateChange() == ItemEvent.SELECTED) applyFilters(); });
+        cbMethodFilter.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) applyFilters();
+        });
+        cbStatusFilter.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) applyFilters();
+        });
         spinnerOrderId.addChangeListener(e -> applyFilters());
 
         btnReset.addActionListener(e -> {
-            cbMethodFilter.setSelectedItem(null);
-            cbStatusFilter.setSelectedItem(null);
-            spinnerOrderId.setValue(0);
-            dto.setSortBy("id");
-            dto.setSortDir("asc");
-            dto.setPage(0);
-            applyFilters();
+            resetFilters();
+            loadData();
         });
 
         table.getTableHeader().addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 int col = table.columnAtPoint(e.getPoint());
                 String key = switch (col) {
                     case 1 -> "order.id";
@@ -90,7 +93,10 @@ public class PaymentListView extends JPanel {
                 };
                 if (key != null) {
                     if (key.equals(dto.getSortBy())) dto.setSortDir(dto.getSortDir().equals("asc") ? "desc" : "asc");
-                    else { dto.setSortBy(key); dto.setSortDir("asc"); }
+                    else {
+                        dto.setSortBy(key);
+                        dto.setSortDir("asc");
+                    }
                     dto.setPage(0);
                     loadData();
                 }
@@ -108,11 +114,19 @@ public class PaymentListView extends JPanel {
             loadData();
         });
 
-        dto.setPage(0);
-        dto.setSize(20);
+        resetFilters();
+    }
+
+    private void resetFilters() {
+        cbMethodFilter.setSelectedIndex(0);
+        cbStatusFilter.setSelectedIndex(0);
+        spinnerOrderId.setValue(0);
+        dto.setMethod(null);
+        dto.setStatus(null);
+        dto.setOrderId(0);
         dto.setSortBy("id");
         dto.setSortDir("asc");
-        applyFilters();
+        dto.setPage(0);
     }
 
     private void applyFilters() {

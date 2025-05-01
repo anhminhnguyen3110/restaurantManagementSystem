@@ -2,9 +2,6 @@ package com.restaurant.models;
 
 import jakarta.persistence.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Entity
 @Table(name = "customers", indexes = @Index(columnList = "phone_number", unique = true))
 public class Customer extends BaseModel {
@@ -20,16 +17,6 @@ public class Customer extends BaseModel {
     @Column(length = 100)
     private String address;
 
-    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL)
-    private List<Booking> bookings = new ArrayList<>();
-
-    @OneToMany(
-            mappedBy = "customer",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true
-    )
-    private List<Shipment> shipments;
-
     public Customer() {
     }
 
@@ -38,11 +25,10 @@ public class Customer extends BaseModel {
         this.phoneNumber = phoneNumber;
     }
 
-    public Customer(String name, String phoneNumber, String address, List<Shipment> shipments) {
+    public Customer(String name, String phoneNumber, String address) {
         this.name = name;
         this.phoneNumber = phoneNumber;
         this.address = address;
-        this.shipments = shipments;
     }
 
     public String getName() {
@@ -75,21 +61,5 @@ public class Customer extends BaseModel {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public List<Booking> getBookings() {
-        return bookings;
-    }
-
-    public void setBookings(List<Booking> bookings) {
-        this.bookings = bookings;
-    }
-
-    public List<Shipment> getShipments() {
-        return shipments;
-    }
-
-    public void setShipments(List<Shipment> shipments) {
-        this.shipments = shipments;
     }
 }

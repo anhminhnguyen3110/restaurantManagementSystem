@@ -17,35 +17,43 @@ public class BookingInputValidator {
         if (dto.getCustomerName() == null || dto.getCustomerName().trim().isEmpty()) {
             errors.add("• Name is required.");
         }
+
         if (dto.getCustomerPhoneNumber() == null || dto.getCustomerPhoneNumber().trim().isEmpty()) {
             errors.add("• Phone number is required.");
         } else if (!PHONE_PATTERN.matcher(dto.getCustomerPhoneNumber().trim()).matches()) {
             errors.add("• Phone number is invalid.");
         }
-        if (dto.getCustomerEmail() == null || dto.getCustomerEmail().trim().isEmpty()) {
-            errors.add("• Email is required.");
-        } else if (!EMAIL_PATTERN.matcher(dto.getCustomerEmail().trim()).matches()) {
-            errors.add("• Email is invalid.");
+
+        if (dto.getCustomerEmail() != null && !dto.getCustomerEmail().trim().isEmpty()) {
+            if (!EMAIL_PATTERN.matcher(dto.getCustomerEmail().trim()).matches()) {
+                errors.add("• Email is invalid.");
+            }
         }
+
         LocalDate date = dto.getDate();
         if (date == null) {
             errors.add("• Date is required.");
         } else if (date.isBefore(LocalDate.now())) {
             errors.add("• You cannot book a date in the past.");
         }
+
         if (dto.getStartTime() == null) {
             errors.add("• Start time is required.");
         }
+
         if (dto.getEndTime() == null) {
             errors.add("• End time is required.");
         }
+
         if (dto.getStartTime() != null && dto.getEndTime() != null &&
                 dto.getEndTime().ordinal() <= dto.getStartTime().ordinal()) {
             errors.add("• End time must be after start time.");
         }
-        if (dto.getTableId() > 0) {
+
+        if (dto.getTableId() <= 0) {
             errors.add("• You must select a table.");
         }
+
         return errors;
     }
 

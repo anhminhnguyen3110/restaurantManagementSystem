@@ -1,13 +1,13 @@
 package com.restaurant.views.order;
 
+import com.restaurant.constants.OrderStatus;
+import com.restaurant.constants.OrderType;
 import com.restaurant.controllers.OrderController;
 import com.restaurant.controllers.RestaurantController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.order.GetOrderDto;
 import com.restaurant.models.Order;
 import com.restaurant.models.Restaurant;
-import com.restaurant.constants.OrderStatus;
-import com.restaurant.constants.OrderType;
 import org.jdesktop.swingx.JXDatePicker;
 
 import javax.swing.*;
@@ -17,31 +17,29 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
 
 public class OrderListView extends JPanel {
     private static final String[] COLUMNS = {
             "ID", "Restaurant", "Table", "Type", "Status", "Total Price", "Created"
     };
 
-    private final OrderController       orderController;
-    private final RestaurantController  restaurantController;
-    private final DefaultTableModel     model;
-    private final JTable                table;
-    private final GetOrderDto           currentDto    = new GetOrderDto();
-    private final JComboBox<OrderType>  cbType        = new JComboBox<>(OrderType.values());
-    private final JComboBox<OrderStatus>cbStatus      = new JComboBox<>(OrderStatus.values());
-    private final JComboBox<Restaurant> cbRestaurant  = new JComboBox<>();
-    private final JXDatePicker          dpDate        = new JXDatePicker();
-    private final JButton               btnPrev       = new JButton("Previous");
-    private final JButton               btnNext       = new JButton("Next");
-    private final JButton               btnReset      = new JButton("Reset");
-    private final JButton               btnAdd        = new JButton("Add");
+    private final OrderController orderController;
+    private final DefaultTableModel model;
+    private final JTable table;
+    private final GetOrderDto currentDto = new GetOrderDto();
+    private final JComboBox<OrderType> cbType = new JComboBox<>(OrderType.values());
+    private final JComboBox<OrderStatus> cbStatus = new JComboBox<>(OrderStatus.values());
+    private final JComboBox<Restaurant> cbRestaurant = new JComboBox<>();
+    private final JXDatePicker dpDate = new JXDatePicker();
+    private final JButton btnPrev = new JButton("Previous");
+    private final JButton btnNext = new JButton("Next");
 
     public OrderListView() {
-        this.orderController      = Injector.getInstance().getInstance(OrderController.class);
-        this.restaurantController = Injector.getInstance().getInstance(RestaurantController.class);
+        this.orderController = Injector.getInstance().getInstance(OrderController.class);
+        RestaurantController restaurantController = Injector.getInstance().getInstance(RestaurantController.class);
 
-        setLayout(new BorderLayout(10,10));
+        setLayout(new BorderLayout(10, 10));
 
         List<Restaurant> restaurants = restaurantController.findAllRestaurants();
         for (Restaurant r : restaurants) {
@@ -53,15 +51,25 @@ public class OrderListView extends JPanel {
         }
 
         JPanel top = new JPanel();
-        top.add(new JLabel("Date:"));       top.add(dpDate);
-        top.add(new JLabel("Type:"));       top.add(cbType);
-        top.add(new JLabel("Status:"));     top.add(cbStatus);
-        top.add(new JLabel("Restaurant:")); top.add(cbRestaurant);
-        top.add(btnReset); top.add(btnAdd);
+        top.add(new JLabel("Date:"));
+        top.add(dpDate);
+        top.add(new JLabel("Type:"));
+        top.add(cbType);
+        top.add(new JLabel("Status:"));
+        top.add(cbStatus);
+        top.add(new JLabel("Restaurant:"));
+        top.add(cbRestaurant);
+        JButton btnReset = new JButton("Reset");
+        top.add(btnReset);
+        JButton btnAdd = new JButton("Add");
+        top.add(btnAdd);
         add(top, BorderLayout.NORTH);
 
         model = new DefaultTableModel(COLUMNS, 0) {
-            @Override public boolean isCellEditable(int row, int col) { return false; }
+            @Override
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
         };
         table = new JTable(model);
         table.setRowHeight(24);
@@ -77,8 +85,11 @@ public class OrderListView extends JPanel {
         cbStatus.addActionListener(e -> applyFilters());
         cbRestaurant.addActionListener(e -> applyFilters());
 
-        btnReset.addActionListener(e -> { resetFilters(); loadData(); });
-        btnAdd  .addActionListener(e -> openForm());
+        btnReset.addActionListener(e -> {
+            resetFilters();
+            loadData();
+        });
+        btnAdd.addActionListener(e -> openForm());
 
         btnPrev.addActionListener(e -> {
             if (currentDto.getPage() > 0) {
@@ -92,7 +103,8 @@ public class OrderListView extends JPanel {
         });
 
         table.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     Order o = getSelectedOrder();
                     if (o != null) {
@@ -107,7 +119,6 @@ public class OrderListView extends JPanel {
         });
 
         resetFilters();
-        loadData();
     }
 
     private void applyFilters() {
@@ -139,7 +150,7 @@ public class OrderListView extends JPanel {
         currentDto.setStatus(null);
         currentDto.setRestaurantId(
                 cbRestaurant.getItemCount() > 0
-                        ? ((Restaurant) cbRestaurant.getSelectedItem()).getId()
+                        ? ((Restaurant) Objects.requireNonNull(cbRestaurant.getSelectedItem())).getId()
                         : 0
         );
         currentDto.setPage(0);

@@ -3,17 +3,19 @@ package com.restaurant.views.menuItem;
 import com.restaurant.controllers.MenuController;
 import com.restaurant.controllers.MenuItemController;
 import com.restaurant.controllers.RestaurantController;
+import com.restaurant.di.Injector;
 import com.restaurant.dtos.menu.GetMenuDto;
 import com.restaurant.dtos.menuItem.CreateMenuItemDto;
 import com.restaurant.dtos.menuItem.UpdateMenuItemDto;
 import com.restaurant.models.Menu;
 import com.restaurant.models.MenuItem;
 import com.restaurant.models.Restaurant;
-import com.restaurant.di.Injector;
+import com.restaurant.utils.validators.MenuItemInputValidator;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.util.List;
 
 public class MenuItemFormDialog extends JDialog {
     private final MenuItemController menuItemController;
@@ -49,38 +51,55 @@ public class MenuItemFormDialog extends JDialog {
         c.insets = new Insets(5, 5, 5, 5);
         c.anchor = GridBagConstraints.WEST;
 
-        c.gridx = 0; c.gridy = 0; p.add(new JLabel("Restaurant:"), c);
-        restaurantController.findAllRestaurants().forEach(r -> cmbRestaurant.addItem(r));
+        c.gridx = 0;
+        c.gridy = 0;
+        p.add(new JLabel("Restaurant:"), c);
+        restaurantController.findAllRestaurants().forEach(cmbRestaurant::addItem);
         cmbRestaurant.setRenderer(new DefaultListCellRenderer() {
-            @Override public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean foc) {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean foc) {
                 super.getListCellRendererComponent(list, value, index, sel, foc);
                 setText(value instanceof Restaurant ? ((Restaurant) value).getName() : "");
                 return this;
             }
         });
-        c.gridx = 1; p.add(cmbRestaurant, c);
+        c.gridx = 1;
+        p.add(cmbRestaurant, c);
 
-        c.gridx = 0; c.gridy = 1; p.add(new JLabel("Menu:"), c);
+        c.gridx = 0;
+        c.gridy = 1;
+        p.add(new JLabel("Menu:"), c);
         cmbMenu.setRenderer(new DefaultListCellRenderer() {
-            @Override public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean foc) {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean foc) {
                 super.getListCellRendererComponent(list, value, index, sel, foc);
                 setText(value instanceof Menu ? ((Menu) value).getName() : "");
                 return this;
             }
         });
-        c.gridx = 1; p.add(cmbMenu, c);
+        c.gridx = 1;
+        p.add(cmbMenu, c);
 
-        c.gridx = 0; c.gridy = 2; p.add(new JLabel("Name:"), c);
-        c.gridx = 1; p.add(txtName, c);
+        c.gridx = 0;
+        c.gridy = 2;
+        p.add(new JLabel("Name:"), c);
+        c.gridx = 1;
+        p.add(txtName, c);
 
-        c.gridx = 0; c.gridy = 3; p.add(new JLabel("Description:"), c);
+        c.gridx = 0;
+        c.gridy = 3;
+        p.add(new JLabel("Description:"), c);
         txtDescription.setLineWrap(true);
         txtDescription.setWrapStyleWord(true);
         JScrollPane descScroll = new JScrollPane(txtDescription);
-        c.gridx = 1; p.add(descScroll, c);
+        c.gridx = 1;
+        p.add(descScroll, c);
 
-        c.gridx = 0; c.gridy = 4; p.add(new JLabel("Price:"), c);
-        c.gridx = 1; p.add(txtPrice, c);
+        c.gridx = 0;
+        c.gridy = 4;
+        p.add(new JLabel("Price:"), c);
+        c.gridx = 1;
+        p.add(txtPrice, c);
 
         JPanel buttons = new JPanel();
         buttons.add(btnSave);
@@ -117,8 +136,11 @@ public class MenuItemFormDialog extends JDialog {
         String name = txtName.getText().trim();
         String desc = txtDescription.getText().trim();
         double price;
-        try { price = Double.parseDouble(txtPrice.getText().trim()); }
-        catch (Exception e) { price = 0; }
+        try {
+            price = Double.parseDouble(txtPrice.getText().trim());
+        } catch (Exception e) {
+            price = 0;
+        }
         Menu m = (Menu) cmbMenu.getSelectedItem();
 
         if (name.isEmpty() || m == null) {
@@ -132,6 +154,18 @@ public class MenuItemFormDialog extends JDialog {
             dto.setDescription(desc);
             dto.setPrice(price);
             dto.setMenuId(m.getId());
+
+            List<String> errors = MenuItemInputValidator.validate(dto);
+            if (!errors.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        String.join("\n", errors),
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+
             menuItemController.createMenuItem(dto);
         } else {
             UpdateMenuItemDto dto = new UpdateMenuItemDto();
@@ -140,6 +174,18 @@ public class MenuItemFormDialog extends JDialog {
             dto.setDescription(desc);
             dto.setPrice(price);
             dto.setMenuId(m.getId());
+
+            List<String> errors = MenuItemInputValidator.validate(dto);
+            if (!errors.isEmpty()) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        String.join("\n", errors),
+                        "Validation Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+
             menuItemController.updateMenuItem(dto);
         }
 

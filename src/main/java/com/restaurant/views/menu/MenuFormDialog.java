@@ -21,14 +21,13 @@ public class MenuFormDialog extends JDialog {
     private final JButton btnCancel = new JButton("Cancel");
 
     private final MenuController menuController;
-    private final RestaurantController restaurantController;
     private final Menu existing;
     private final Runnable onSaved;
 
     public MenuFormDialog(Frame owner, Menu existing, Runnable onSaved) {
         super(owner, existing == null ? "New Menu" : "Edit Menu", true);
         this.menuController = Injector.getInstance().getInstance(MenuController.class);
-        this.restaurantController = Injector.getInstance().getInstance(RestaurantController.class);
+        RestaurantController restaurantController = Injector.getInstance().getInstance(RestaurantController.class);
         this.existing = existing;
         this.onSaved = onSaved;
 
@@ -84,11 +83,13 @@ public class MenuFormDialog extends JDialog {
             dto.setName(name);
             dto.setDescription(desc);
             dto.setRestaurantId(r != null ? r.getId() : 0);
+
             List<String> errors = MenuInputValidator.validate(dto);
             if (!errors.isEmpty()) {
                 JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+
             menuController.createMenu(dto);
         } else {
             UpdateMenuDto dto = new UpdateMenuDto();
@@ -96,11 +97,13 @@ public class MenuFormDialog extends JDialog {
             dto.setName(name);
             dto.setDescription(desc);
             dto.setRestaurantId(r != null ? r.getId() : 0);
+
             List<String> errors = MenuInputValidator.validate(dto);
             if (!errors.isEmpty()) {
                 JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+
             menuController.updateMenu(dto);
         }
         onSaved.run();

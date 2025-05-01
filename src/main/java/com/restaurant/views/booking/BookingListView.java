@@ -38,7 +38,6 @@ public class BookingListView extends JPanel {
     private final JComboBox<BookingStatus> cmbStatus;
     private final JButton btnPrev = new JButton("Previous");
     private final JButton btnNext = new JButton("Next");
-    private final JButton btnReset = new JButton("Reset");
     private final GetBookingsDto currentDto = new GetBookingsDto();
 
     public BookingListView() {
@@ -106,6 +105,7 @@ public class BookingListView extends JPanel {
         filters.add(txtTableNo);
         filters.add(new JLabel("Status:"));
         filters.add(cmbStatus);
+        JButton btnReset = new JButton("Reset");
         filters.add(btnReset);
 
         JPanel crud = new JPanel();
@@ -118,13 +118,17 @@ public class BookingListView extends JPanel {
         add(filters, BorderLayout.NORTH);
 
         model = new DefaultTableModel(COLUMNS, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+            @Override
+            public boolean isCellEditable(int r, int c) {
+                return false;
+            }
         };
         table = new JTable(model);
         table.setRowHeight(24);
         table.setFillsViewportHeight(true);
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(
+            @Override
+            public Component getTableCellRendererComponent(
                     JTable tbl, Object val, boolean sel, boolean foc, int r, int c
             ) {
                 super.getTableCellRendererComponent(tbl, val, sel, foc, r, c);
@@ -134,15 +138,16 @@ public class BookingListView extends JPanel {
             }
         });
         table.getColumnModel().getColumn(9).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override public Component getTableCellRendererComponent(
+            @Override
+            public Component getTableCellRendererComponent(
                     JTable tbl, Object val, boolean sel, boolean foc, int r, int c
             ) {
                 super.getTableCellRendererComponent(tbl, val, sel, foc, r, c);
                 setBackground(sel ? tbl.getSelectionBackground() : (r % 2 == 0 ? Color.WHITE : new Color(245, 245, 245)));
                 if (val instanceof BookingStatus st) {
                     switch (st) {
-                        case COMPLETED -> setForeground(new Color(0,128,0));
-                        case CANCELLED -> setForeground(new Color(192,0,0));
+                        case COMPLETED -> setForeground(new Color(0, 128, 0));
+                        case CANCELLED -> setForeground(new Color(192, 0, 0));
                         default -> setForeground(Color.BLUE);
                     }
                     setText(st.toString());
@@ -161,9 +166,20 @@ public class BookingListView extends JPanel {
         add(paging, BorderLayout.SOUTH);
 
         DocumentListener dl = new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { applyFilters(); }
-            @Override public void removeUpdate(DocumentEvent e) { applyFilters(); }
-            @Override public void changedUpdate(DocumentEvent e) { applyFilters(); }
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                applyFilters();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                applyFilters();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                applyFilters();
+            }
         };
 
         dpDate.addActionListener(e -> applyFilters());
@@ -182,7 +198,8 @@ public class BookingListView extends JPanel {
         btnDel.addActionListener(e -> deleteSelected());
 
         table.getTableHeader().addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 int c = table.columnAtPoint(e.getPoint());
                 String key = switch (c) {
                     case 6 -> "date";
@@ -205,7 +222,8 @@ public class BookingListView extends JPanel {
         });
 
         table.addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     Booking b = getSelected();
                     if (b != null) openForm(b);
@@ -225,7 +243,6 @@ public class BookingListView extends JPanel {
         });
 
         resetFilters();
-        loadData();
     }
 
     private void applyFilters() {
