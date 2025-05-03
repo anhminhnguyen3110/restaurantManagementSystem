@@ -3,6 +3,7 @@ package com.restaurant.views.restaurantTable;
 import com.restaurant.controllers.RestaurantTableController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.restaurantTable.CreateRestaurantTableDto;
+import com.restaurant.dtos.restaurantTable.GetRestaurantTableDto;
 import com.restaurant.dtos.restaurantTable.UpdateRestaurantTableDto;
 import com.restaurant.models.RestaurantTable;
 import com.restaurant.utils.validators.RestaurantTableInputValidator;
@@ -26,42 +27,30 @@ public class RestaurantTableFormDialog extends JDialog {
     private final int restaurantId;
     private final Runnable onSaved;
 
-    public RestaurantTableFormDialog(
-            Frame owner,
-            RestaurantTable existing,
-            int restaurantId,
-            Runnable onSaved
-    ) {
-        this(owner,
-                existing,
-                restaurantId,
-                existing.getStartX(),
-                existing.getStartY(),
-                existing.getEndX(),
-                existing.getEndY(),
-                onSaved);
+    public RestaurantTableFormDialog(Frame owner, RestaurantTable existing, int restaurantId, Runnable onSaved) {
+        this(owner, existing, restaurantId, existing.getStartX(), existing.getStartY(), existing.getEndX(), existing.getEndY(), onSaved);
     }
 
-    public RestaurantTableFormDialog(
-            Frame owner,
-            RestaurantTable existing,
-            int restaurantId,
-            int startX,
-            int startY,
-            int endX,
-            int endY,
-            Runnable onSaved
-    ) {
-        super(owner,
-                existing == null ? "New Table" : "Edit Table",
-                true);
-
-        this.controller = Injector.getInstance()
-                .getInstance(RestaurantTableController.class);
+    public RestaurantTableFormDialog(Frame owner, RestaurantTable existing, int restaurantId, int startX, int startY, int endX, int endY, Runnable onSaved) {
+        super(owner, existing == null ? "New Table" : "Edit Table", true);
+        this.controller = Injector.getInstance().getInstance(RestaurantTableController.class);
         this.existing = existing;
         this.restaurantId = restaurantId;
         this.onSaved = onSaved;
 
+        spnNumber.setEditor(new JSpinner.NumberEditor(spnNumber, "'#'0"));
+        if (existing == null) {
+            GetRestaurantTableDto getDto = new GetRestaurantTableDto();
+            getDto.setRestaurantId(restaurantId);
+            List<RestaurantTable> tables = controller.findTables(getDto);
+            int max = tables.stream().mapToInt(RestaurantTable::getNumber).max().orElse(0);
+            spnNumber.setValue(max + 1);
+        } else {
+            spnNumber.setValue(existing.getNumber());
+        }
+        spnNumber.setEnabled(false);
+
+        spnCapacity.setModel(new SpinnerNumberModel(existing != null ? existing.getCapacity() : 1, 1, 20, 1));
         spnStartX.setModel(new SpinnerNumberModel(startX, 0, 9, 1));
         spnStartY.setModel(new SpinnerNumberModel(startY, 0, 9, 1));
         spnEndX.setModel(new SpinnerNumberModel(endX, 0, 9, 1));
@@ -71,9 +60,11 @@ public class RestaurantTableFormDialog extends JDialog {
         pack();
         setLocationRelativeTo(owner);
 
-        if (existing != null) {
-            spnNumber.setValue(existing.getNumber());
-            spnCapacity.setValue(existing.getCapacity());
+        if (existing == null) {
+            spnStartX.setEnabled(false);
+            spnStartY.setEnabled(false);
+            spnEndX.setEnabled(false);
+            spnEndY.setEnabled(false);
         }
     }
 
@@ -95,7 +86,6 @@ public class RestaurantTableFormDialog extends JDialog {
         JPanel buttons = new JPanel();
         buttons.add(btnSave);
         buttons.add(btnCancel);
-
         btnSave.addActionListener(e -> onSave());
         btnCancel.addActionListener(e -> dispose());
 
@@ -113,36 +103,38 @@ public class RestaurantTableFormDialog extends JDialog {
 
         if (existing == null) {
             CreateRestaurantTableDto dto = new CreateRestaurantTableDto();
-            if (dtoBuilder(num, cap, sx, sy, ex, ey, dto, RestaurantTableInputValidator.validate(dto))) return;
+            dto.setNumber(num);
+            dto.setCapacity(cap);
+            dto.setRestaurantId(restaurantId);
+            dto.setStartX(sx);
+            dto.setStartY(sy);
+            dto.setEndX(ex);
+            dto.setEndY(ey);
+            List<String> errors = RestaurantTableInputValidator.validate(dto);
+            if (!errors.isEmpty()) {
+                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             controller.createTable(dto);
-
         } else {
             UpdateRestaurantTableDto dto = new UpdateRestaurantTableDto();
             dto.setId(existing.getId());
-            if (dtoBuilder(num, cap, sx, sy, ex, ey, dto, RestaurantTableInputValidator.validate(dto))) return;
+            dto.setNumber(num);
+            dto.setCapacity(cap);
+            dto.setRestaurantId(restaurantId);
+            dto.setStartX(sx);
+            dto.setStartY(sy);
+            dto.setEndX(ex);
+            dto.setEndY(ey);
+            List<String> errors = RestaurantTableInputValidator.validate(dto);
+            if (!errors.isEmpty()) {
+                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             controller.updateTable(dto);
         }
 
         onSaved.run();
         dispose();
-    }
-
-    private boolean dtoBuilder(int num, int cap, int sx, int sy, int ex, int ey, CreateRestaurantTableDto dto, List<String> validate) {
-        dto.setNumber(num);
-        dto.setCapacity(cap);
-        dto.setRestaurantId(restaurantId);
-        dto.setStartX(sx);
-        dto.setStartY(sy);
-        dto.setEndX(ex);
-        dto.setEndY(ey);
-
-        if (!validate.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    String.join("\n", validate),
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE);
-            return true;
-        }
-        return false;
     }
 }

@@ -26,15 +26,22 @@ public class RestaurantTableMapView extends JPanel {
     private final JXDatePicker datePicker = new JXDatePicker();
     private final JComboBox<BookingTimeSlot> cbTime;
     private final JPanel mapContainer = new JPanel(new GridBagLayout());
+    private GetRestaurantTableDto searchDto;
+    private GetRestaurantTableForBookingDto bookingDto;
 
     public RestaurantTableMapView() {
         RestaurantController restaurantController = Injector.getInstance().getInstance(RestaurantController.class);
         tableController = Injector.getInstance().getInstance(RestaurantTableController.class);
-
+        searchDto = new GetRestaurantTableDto();
+        bookingDto = new GetRestaurantTableForBookingDto();
         List<Restaurant> rests = restaurantController.findAllRestaurants();
-        for (Restaurant r : rests) cmbRestaurant.addItem(r);
-        if (!rests.isEmpty()) cmbRestaurant.setSelectedIndex(0);
-
+        for (Restaurant r : rests) {
+            cmbRestaurant.addItem(r);
+        }
+        if (!rests.isEmpty()) {
+            cmbRestaurant.setSelectedIndex(0);
+            searchDto.setRestaurantId(rests.get(0).getId());
+        }
         DefaultComboBoxModel<BookingTimeSlot> timeModel = new DefaultComboBoxModel<>();
         timeModel.addElement(null);
         for (BookingTimeSlot slot : BookingTimeSlot.values()) {
@@ -43,15 +50,13 @@ public class RestaurantTableMapView extends JPanel {
         cbTime = new JComboBox<>(timeModel);
         cbTime.setRenderer(new BasicComboBoxRenderer() {
             @Override
-            public Component getListCellRendererComponent(
-                    JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 setText(value == null ? "" : value.toString());
                 return this;
             }
         });
         cbTime.setSelectedIndex(0);
-
         JPanel top = new JPanel();
         top.add(new JLabel("Restaurant:"));
         top.add(cmbRestaurant);
@@ -64,36 +69,39 @@ public class RestaurantTableMapView extends JPanel {
         setLayout(new BorderLayout(5, 5));
         add(top, BorderLayout.NORTH);
         add(mapContainer, BorderLayout.CENTER);
-
         ActionListener refresher = e -> loadData();
         cmbRestaurant.addActionListener(refresher);
         datePicker.addActionListener(refresher);
         cbTime.addActionListener(refresher);
         btnReset.addActionListener(e -> {
-            if (cmbRestaurant.getItemCount() > 0) cmbRestaurant.setSelectedIndex(0);
+            if (cmbRestaurant.getItemCount() > 0) {
+                cmbRestaurant.setSelectedIndex(0);
+                searchDto = new GetRestaurantTableDto();
+                searchDto.setRestaurantId(cmbRestaurant.getItemAt(0).getId());
+            }
             datePicker.setDate(null);
             cbTime.setSelectedIndex(0);
+            bookingDto = new GetRestaurantTableForBookingDto();
             loadData();
         });
     }
 
     public void loadData() {
         Restaurant r = (Restaurant) cmbRestaurant.getSelectedItem();
-        if (r == null) return;
-        GetRestaurantTableDto gt = new GetRestaurantTableDto();
-        gt.setRestaurantId(r.getId());
-        List<RestaurantTable> all = tableController.findTables(gt);
+        if (r == null) {
+            return;
+        }
+        searchDto.setRestaurantId(r.getId());
+        List<RestaurantTable> all = tableController.findTables(searchDto);
         Date d = datePicker.getDate();
         BookingTimeSlot slot = (BookingTimeSlot) cbTime.getSelectedItem();
         Set<Integer> availIds = null;
         if (d != null && slot != null) {
-            GetRestaurantTableForBookingDto bq = new GetRestaurantTableForBookingDto();
-            bq.setRestaurantId(r.getId());
-            bq.setDate(d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
-            bq.setStartTime(slot);
-            bq.setEndTime(slot);
+            bookingDto.setRestaurantId(r.getId());
+            bookingDto.setDate(d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate());
+            bookingDto.setTime(slot);
             availIds = new HashSet<>();
-            for (RestaurantTable t : tableController.findTablesForBooking(bq)) {
+            for (RestaurantTable t : tableController.findTablesForBooking(bookingDto)) {
                 availIds.add(t.getId());
             }
         }
@@ -116,7 +124,6 @@ public class RestaurantTableMapView extends JPanel {
             public void onExistingTable(RestaurantTable table, int cx, int cy) {
                 openTableForm(table, r.getId(), cx, cy);
             }
-
             @Override
             public void onNewRegion(int sx, int sy, int ex, int ey) {
                 openTableForm(null, r.getId(), sx, sy, ex, ey);
@@ -131,7 +138,10 @@ public class RestaurantTableMapView extends JPanel {
         if (existing != null) {
             dlg = new RestaurantTableFormDialog(owner, existing, restaurantId, this::loadData);
         } else {
-            int sx = coords[0], sy = coords[1], ex = coords[2], ey = coords[3];
+            int sx = coords[0];
+            int sy = coords[1];
+            int ex = coords[2];
+            int ey = coords[3];
             dlg = new RestaurantTableFormDialog(owner, null, restaurantId, sx, sy, ex, ey, this::loadData);
         }
         dlg.setVisible(true);

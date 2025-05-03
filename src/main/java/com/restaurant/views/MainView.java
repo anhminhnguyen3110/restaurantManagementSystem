@@ -159,6 +159,7 @@ public class MainView extends JFrame {
             tabs.addTab("Payments", paymentView);
             tabs.addTab("Shipments", shipmentView);
             tabs.addTab("Tables", tableView);
+            tabs.addTab("Bookings", bookingView);
             setTitle("Wait Staff Dashboard");
         }
 

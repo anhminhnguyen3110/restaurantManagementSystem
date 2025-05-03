@@ -51,8 +51,7 @@ public class MenuItemFormDialog extends JDialog {
         c.insets = new Insets(5, 5, 5, 5);
         c.anchor = GridBagConstraints.WEST;
 
-        c.gridx = 0;
-        c.gridy = 0;
+        c.gridx = 0; c.gridy = 0;
         p.add(new JLabel("Restaurant:"), c);
         restaurantController.findAllRestaurants().forEach(cmbRestaurant::addItem);
         cmbRestaurant.setRenderer(new DefaultListCellRenderer() {
@@ -66,8 +65,7 @@ public class MenuItemFormDialog extends JDialog {
         c.gridx = 1;
         p.add(cmbRestaurant, c);
 
-        c.gridx = 0;
-        c.gridy = 1;
+        c.gridx = 0; c.gridy = 1;
         p.add(new JLabel("Menu:"), c);
         cmbMenu.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -80,14 +78,12 @@ public class MenuItemFormDialog extends JDialog {
         c.gridx = 1;
         p.add(cmbMenu, c);
 
-        c.gridx = 0;
-        c.gridy = 2;
+        c.gridx = 0; c.gridy = 2;
         p.add(new JLabel("Name:"), c);
         c.gridx = 1;
         p.add(txtName, c);
 
-        c.gridx = 0;
-        c.gridy = 3;
+        c.gridx = 0; c.gridy = 3;
         p.add(new JLabel("Description:"), c);
         txtDescription.setLineWrap(true);
         txtDescription.setWrapStyleWord(true);
@@ -95,8 +91,7 @@ public class MenuItemFormDialog extends JDialog {
         c.gridx = 1;
         p.add(descScroll, c);
 
-        c.gridx = 0;
-        c.gridy = 4;
+        c.gridx = 0; c.gridy = 4;
         p.add(new JLabel("Price:"), c);
         c.gridx = 1;
         p.add(txtPrice, c);
@@ -121,12 +116,16 @@ public class MenuItemFormDialog extends JDialog {
         btnSave.addActionListener(e -> onSave());
         btnCancel.addActionListener(e -> dispose());
 
+        System.out.println("Menu name: " + (existing != null ? existing.getName() : "New Menu Item"));
+
         if (existing != null) {
             txtName.setText(existing.getName());
             txtDescription.setText(existing.getDescription());
             txtPrice.setText(String.valueOf(existing.getPrice()));
             cmbRestaurant.setSelectedItem(existing.getMenu().getRestaurant());
-            SwingUtilities.invokeLater(() -> cmbMenu.setSelectedItem(existing.getMenu()));
+            cmbMenu.setSelectedItem(existing.getMenu());
+            cmbRestaurant.setEnabled(false);
+            cmbMenu.setEnabled(false);
         } else {
             cmbRestaurant.setSelectedIndex(0);
         }
@@ -143,7 +142,7 @@ public class MenuItemFormDialog extends JDialog {
         }
         Menu m = (Menu) cmbMenu.getSelectedItem();
 
-        if (name.isEmpty() || m == null) {
+        if (name.isEmpty() || (existing == null && m == null)) {
             JOptionPane.showMessageDialog(this, "Name and Menu are required.", "Validation", JOptionPane.ERROR_MESSAGE);
             return;
         }
@@ -154,18 +153,11 @@ public class MenuItemFormDialog extends JDialog {
             dto.setDescription(desc);
             dto.setPrice(price);
             dto.setMenuId(m.getId());
-
             List<String> errors = MenuItemInputValidator.validate(dto);
             if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        String.join("\n", errors),
-                        "Validation Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
             menuItemController.createMenuItem(dto);
         } else {
             UpdateMenuItemDto dto = new UpdateMenuItemDto();
@@ -173,19 +165,11 @@ public class MenuItemFormDialog extends JDialog {
             dto.setName(name);
             dto.setDescription(desc);
             dto.setPrice(price);
-            dto.setMenuId(m.getId());
-
             List<String> errors = MenuItemInputValidator.validate(dto);
             if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        String.join("\n", errors),
-                        "Validation Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
+                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
             menuItemController.updateMenuItem(dto);
         }
 

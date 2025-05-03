@@ -53,27 +53,55 @@ public class RestaurantTableDAOImpl implements RestaurantTableDAO {
 
     @Override
     public List<RestaurantTable> findForBooking(GetRestaurantTableForBookingDto dto) {
-        try (EntityManager em = emf.createEntityManager()) {
-            String jpql = """
-                    SELECT t
-                      FROM RestaurantTable t
-                     WHERE t.restaurant.id = :rid
-                       AND t.id NOT IN (
-                         SELECT b.table.id
-                           FROM Booking b
-                          WHERE b.date = :date
-                            AND b.startTime < :endTime
-                            AND b.endTime > :startTime
-                       )
-                    """;
-            TypedQuery<RestaurantTable> q = em.createQuery(jpql, RestaurantTable.class)
-                    .setParameter("rid", dto.getRestaurantId())
-                    .setParameter("date", dto.getDate())
-                    .setParameter("startTime", dto.getStartTime())
-                    .setParameter("endTime", dto.getEndTime());
-            return q.getResultList();
-        } catch (RuntimeException e) {
-            throw new RuntimeException("Error finding tables for booking", e);
+        if (dto.getTime() != null) {
+            try (EntityManager em = emf.createEntityManager()) {
+                String jpql = """
+                        SELECT t
+                          FROM RestaurantTable t
+                         WHERE t.restaurant.id = :rid
+                           AND t.id NOT IN (
+                             SELECT b.table.id
+                               FROM Booking b
+                              WHERE b.date = :date
+                                AND b.startTime <= :time
+                                AND b.endTime > :time
+                           )
+                        """;
+                TypedQuery<RestaurantTable> q = em.createQuery(jpql, RestaurantTable.class)
+                        .setParameter("rid", dto.getRestaurantId())
+                        .setParameter("date", dto.getDate())
+                        .setParameter("time", dto.getTime());
+
+                return q.getResultList();
+            } catch (RuntimeException e) {
+                throw new RuntimeException("Error finding tables for booking", e);
+            }
+        } else {
+            try (EntityManager em = emf.createEntityManager()) {
+                String jpql = """
+                        SELECT t
+                          FROM RestaurantTable t
+                         WHERE t.restaurant.id = :rid
+                           AND t.id NOT IN (
+                             SELECT b.table.id
+                               FROM Booking b
+                              WHERE b.date = :date
+                                AND (
+                                    (b.startTime <= :endTime AND b.endTime > :startTime)
+                                )
+                           )
+                        """;
+
+                TypedQuery<RestaurantTable> q = em.createQuery(jpql, RestaurantTable.class)
+                        .setParameter("rid", dto.getRestaurantId())
+                        .setParameter("date", dto.getDate())
+                        .setParameter("startTime", dto.getStartTime())
+                        .setParameter("endTime", dto.getEndTime());
+
+                return q.getResultList();
+            } catch (RuntimeException e) {
+                throw new RuntimeException("Error finding tables for booking", e);
+            }
         }
     }
 

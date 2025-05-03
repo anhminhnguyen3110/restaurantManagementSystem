@@ -53,6 +53,9 @@ public class RestaurantTableControllerImpl implements RestaurantTableController 
         t.setCapacity(dto.getCapacity());
         t.setStartX(dto.getStartX());
         t.setStartY(dto.getStartY());
+        t.setEndX(dto.getEndX());
+        t.setEndY(dto.getEndY());
+
         restaurantTableDAO.add(t);
     }
 

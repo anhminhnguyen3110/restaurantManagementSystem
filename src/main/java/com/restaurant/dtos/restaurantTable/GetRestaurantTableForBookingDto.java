@@ -6,6 +6,7 @@ import java.time.LocalDate;
 
 public class GetRestaurantTableForBookingDto extends GetRestaurantTableDto {
     private LocalDate date;
+    private BookingTimeSlot time;
     private BookingTimeSlot startTime;
     private BookingTimeSlot endTime;
 
@@ -35,5 +36,13 @@ public class GetRestaurantTableForBookingDto extends GetRestaurantTableDto {
 
     public void setEndTime(BookingTimeSlot endTime) {
         this.endTime = endTime;
+    }
+
+    public BookingTimeSlot getTime() {
+        return time;
+    }
+
+    public void setTime(BookingTimeSlot time) {
+        this.time = time;
     }
 }

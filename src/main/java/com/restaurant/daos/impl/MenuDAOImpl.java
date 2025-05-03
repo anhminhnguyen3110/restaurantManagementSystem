@@ -110,13 +110,17 @@ public class MenuDAOImpl implements MenuDAO {
     @Override
     public Menu getById(int id) {
         try (EntityManager em = emf.createEntityManager()) {
-            return em.createQuery(
+            Menu menu = em.createQuery(
                             "SELECT m FROM Menu m " +
                                     "LEFT JOIN FETCH m.restaurant " +
                                     "LEFT JOIN FETCH m.items i " +
                                     "WHERE m.id = :id", Menu.class)
                     .setParameter("id", id)
                     .getSingleResult();
+
+            menu.getItems().forEach(item -> item.getOrderItems().size());
+    
+            return menu;
         } catch (NoResultException e) {
             return null;
         }
