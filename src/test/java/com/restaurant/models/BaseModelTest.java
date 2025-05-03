@@ -8,15 +8,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BaseModelTest {
 
-    private static class DummyModel extends BaseModel {
-        public void triggerCreate() {
-            onCreate();
-        }
-        public void triggerUpdate() {
-            onUpdate();
-        }
-    }
-
     @Test
     void testDefaultIdIsZero() {
         DummyModel model = new DummyModel();
@@ -50,5 +41,15 @@ class BaseModelTest {
 
         assertTrue(updatedAt.isAfter(createdAt));
         assertEquals(createdAt, model.getCreatedAt());
+    }
+
+    private static class DummyModel extends BaseModel {
+        public void triggerCreate() {
+            onCreate();
+        }
+
+        public void triggerUpdate() {
+            onUpdate();
+        }
     }
 }

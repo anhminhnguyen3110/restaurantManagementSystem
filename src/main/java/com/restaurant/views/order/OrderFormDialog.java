@@ -6,10 +6,12 @@ import com.restaurant.controllers.RestaurantController;
 import com.restaurant.controllers.RestaurantTableController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.order.CreateOrderDto;
+import com.restaurant.dtos.order.UpdateOrderDto;
 import com.restaurant.models.Order;
 import com.restaurant.models.Restaurant;
 import com.restaurant.models.RestaurantTable;
-import com.restaurant.utils.validators.OrderInputValidator;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -104,15 +106,18 @@ public class OrderFormDialog extends JDialog {
         int tableId = cbTable.isEnabled() && cbTable.getSelectedItem() != null
                 ? ((RestaurantTable) cbTable.getSelectedItem()).getId()
                 : 0;
-        List<String> errors = OrderInputValidator.validate(type, tableId);
-        if (!errors.isEmpty()) {
-            JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+
         CreateOrderDto dto = new CreateOrderDto();
-        dto.setRestaurantId(((Restaurant) Objects.requireNonNull(cbRestaurant.getSelectedItem())).getId());
-        dto.setRestaurantTableId(type == OrderType.DINE_IN ? tableId : 0);
+        dto.setRestaurantId(
+                ((Restaurant) Objects.requireNonNull(cbRestaurant.getSelectedItem())).getId()
+        );
         dto.setOrderType(type);
+        dto.setRestaurantTableId(type == OrderType.DINE_IN ? tableId : 0);
+
+        Validator<CreateOrderDto, UpdateOrderDto> v =
+                ValidatorFactory.getCreateValidator(CreateOrderDto.class);
+        if (!v.triggerCreateErrors(dto)) return;
+
         Order newOrder = orderController.createOrder(dto);
         onSaved.run();
         dispose();

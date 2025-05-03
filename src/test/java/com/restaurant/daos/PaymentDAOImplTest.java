@@ -63,7 +63,7 @@ class PaymentDAOImplTest {
         when(em.getCriteriaBuilder()).thenReturn(cb);
         when(cb.createQuery(Payment.class)).thenReturn(cq);
         when(cq.from(Payment.class)).thenReturn(root);
-        when(root.fetch(eq("order"), eq(JoinType.LEFT))).thenReturn((Fetch) fetchOrder);
+        when(root.fetch(eq("order"), eq(JoinType.LEFT))).thenReturn(fetchOrder);
         when(root.get(anyString())).thenReturn(path);
         when(path.get(anyString())).thenReturn(path);
         when(cb.equal(any(Expression.class), any())).thenReturn(predicate);

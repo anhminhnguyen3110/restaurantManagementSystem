@@ -1,6 +1,9 @@
 package com.restaurant.models;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "customers", indexes = @Index(columnList = "phone_number", unique = true))

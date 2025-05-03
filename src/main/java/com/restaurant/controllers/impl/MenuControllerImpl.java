@@ -8,13 +8,17 @@ import com.restaurant.di.Injectable;
 import com.restaurant.dtos.menu.CreateMenuDto;
 import com.restaurant.dtos.menu.GetMenuDto;
 import com.restaurant.dtos.menu.UpdateMenuDto;
+import com.restaurant.events.ErrorEvent;
 import com.restaurant.models.Menu;
 import com.restaurant.models.Restaurant;
+import com.restaurant.pubsub.ErrorPubSubService;
+import com.restaurant.pubsub.PubSubService;
 
 import java.util.List;
 
 @Injectable
 public class MenuControllerImpl implements MenuController {
+    private final PubSubService pubSubService = ErrorPubSubService.getInstance();
     @Inject
     private MenuDAO menuDAO;
     @Inject
@@ -27,7 +31,7 @@ public class MenuControllerImpl implements MenuController {
     @Override
     public void createMenu(CreateMenuDto dto) {
         if (menuDAO.existsByNameAndRestaurant(dto.getName(), dto.getRestaurantId())) {
-            System.out.println("Duplicate menu detected: name=" + dto.getName());
+            pubSubService.publish(new ErrorEvent("Duplicate menu detected: name=" + dto.getName()));
             return;
         }
         Restaurant r = restaurantDAO.getById(dto.getRestaurantId());
@@ -49,7 +53,7 @@ public class MenuControllerImpl implements MenuController {
         if (m == null) return;
         if (!m.getName().equals(dto.getName())
                 && menuDAO.existsByNameAndRestaurant(dto.getName(), dto.getRestaurantId(), dto.getId())) {
-            System.out.println("Duplicate menu detected: name=" + dto.getName());
+            pubSubService.publish(new ErrorEvent("Duplicate menu detected: name=" + dto.getName()));
             return;
         }
         m.setName(dto.getName());

@@ -12,7 +12,8 @@ import com.restaurant.dtos.restaurantTable.GetRestaurantTableForBookingDto;
 import com.restaurant.models.Booking;
 import com.restaurant.models.Restaurant;
 import com.restaurant.models.RestaurantTable;
-import com.restaurant.utils.validators.BookingInputValidator;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 import org.jdesktop.swingx.JXDatePicker;
 
 import javax.swing.*;
@@ -40,18 +41,11 @@ public class BookingFormDialog extends JDialog {
     private final Booking existing;
     private final Runnable onSaved;
 
-    public BookingFormDialog(
-            Frame owner,
-            Booking existing,
-            Runnable onSaved
-    ) {
+    public BookingFormDialog(Frame owner, Booking existing, Runnable onSaved) {
         super(owner, existing == null ? "New Booking" : "Edit Booking", true);
-
         this.bookingController = Injector.getInstance().getInstance(BookingController.class);
-        RestaurantController restaurantController = Injector.getInstance()
-                .getInstance(RestaurantController.class);
-        this.tableController = Injector.getInstance()
-                .getInstance(RestaurantTableController.class);
+        RestaurantController restaurantController = Injector.getInstance().getInstance(RestaurantController.class);
+        this.tableController = Injector.getInstance().getInstance(RestaurantTableController.class);
         this.existing = existing;
         this.onSaved = onSaved;
 
@@ -59,13 +53,9 @@ public class BookingFormDialog extends JDialog {
         restaurants.forEach(restaurantCombo::addItem);
         restaurantCombo.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(
-                    JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus
-            ) {
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof Restaurant) {
-                    setText(((Restaurant) value).getName());
-                }
+                if (value instanceof Restaurant) setText(((Restaurant) value).getName());
                 return this;
             }
         });
@@ -80,16 +70,12 @@ public class BookingFormDialog extends JDialog {
             nameField.setText(existing.getCustomer().getName());
             phoneField.setText(existing.getCustomer().getPhoneNumber());
             emailField.setText(existing.getCustomer().getEmail());
-            datePicker.setDate(Date.from(
-                    existing.getDate().atStartOfDay(ZoneId.systemDefault()).toInstant()
-            ));
+            datePicker.setDate(Date.from(existing.getDate().atStartOfDay(ZoneId.systemDefault()).toInstant()));
             startCombo.setSelectedItem(existing.getStartTime());
             endCombo.setSelectedItem(existing.getEndTime());
             restaurantCombo.setSelectedItem(existing.getTable().getRestaurant());
             statusCombo.setSelectedItem(existing.getStatus());
-            SwingUtilities.invokeLater(
-                    () -> tableCombo.setSelectedItem(existing.getTable())
-            );
+            SwingUtilities.invokeLater(() -> tableCombo.setSelectedItem(existing.getTable()));
         }
 
         buildUI();
@@ -112,11 +98,6 @@ public class BookingFormDialog extends JDialog {
         f.add(new JLabel("Name:"));
         f.add(nameField);
         f.add(new JLabel("Phone:"));
-        if (existing == null) {
-            f.add(phoneField);
-        } else {
-            phoneField.setEnabled(false);
-        }
         f.add(phoneField);
         f.add(new JLabel("Email:"));
         f.add(emailField);
@@ -124,13 +105,11 @@ public class BookingFormDialog extends JDialog {
             f.add(new JLabel("Status:"));
             f.add(statusCombo);
         }
-
         JPanel b = new JPanel();
         b.add(btnSave);
         b.add(btnCancel);
         btnSave.addActionListener(e -> onSave());
         btnCancel.addActionListener(e -> dispose());
-
         getContentPane().add(f, BorderLayout.CENTER);
         getContentPane().add(b, BorderLayout.SOUTH);
     }
@@ -157,26 +136,17 @@ public class BookingFormDialog extends JDialog {
     }
 
     private void onSave() {
-        Date picked = datePicker.getDate();
-        if (picked == null) {
-            JOptionPane.showMessageDialog(
-                    this,
-                    "• Date is required.",
-                    "Validation Error",
-                    JOptionPane.ERROR_MESSAGE
-            );
+        Date selectedDate = datePicker.getDate();
+        if (selectedDate == null) {
+            JOptionPane.showMessageDialog(this, "Please select a date.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
-        LocalDate date = picked.toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
-
-        String name = nameField.getText().trim(),
-                phone = phoneField.getText().trim(),
-                email = emailField.getText().trim();
-        BookingTimeSlot s = (BookingTimeSlot) startCombo.getSelectedItem(),
-                e = (BookingTimeSlot) endCombo.getSelectedItem();
+        LocalDate date = selectedDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        String name = nameField.getText().trim();
+        String phone = phoneField.getText().trim();
+        String email = emailField.getText().trim();
+        BookingTimeSlot s = (BookingTimeSlot) startCombo.getSelectedItem();
+        BookingTimeSlot e = (BookingTimeSlot) endCombo.getSelectedItem();
         RestaurantTable t = (RestaurantTable) tableCombo.getSelectedItem();
         BookingStatus st = (BookingStatus) statusCombo.getSelectedItem();
 
@@ -189,19 +159,9 @@ public class BookingFormDialog extends JDialog {
             dto.setStartTime(s);
             dto.setEndTime(e);
             dto.setTableId(t != null ? t.getId() : 0);
-
-            List<String> errors = BookingInputValidator.validate(dto);
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        String.join("\n", errors),
-                        "Validation Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-                return;
-            }
+            Validator<CreateBookingDto, UpdateBookingDto> v = ValidatorFactory.getCreateValidator(CreateBookingDto.class);
+            if (!v.triggerCreateErrors(dto)) return;
             bookingController.createBooking(dto);
-
         } else {
             UpdateBookingDto dto = new UpdateBookingDto();
             dto.setId(existing.getId());
@@ -213,18 +173,8 @@ public class BookingFormDialog extends JDialog {
             dto.setEndTime(e);
             dto.setTableId(t != null ? t.getId() : 0);
             dto.setStatus(st);
-
-            List<String> errors = BookingInputValidator.validate(dto);
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(
-                        this,
-                        String.join("\n", errors),
-                        "Validation Error",
-                        JOptionPane.ERROR_MESSAGE
-                );
-                return;
-            }
-
+            Validator<CreateBookingDto, UpdateBookingDto> v = ValidatorFactory.getUpdateValidator(UpdateBookingDto.class);
+            if (!v.triggerUpdateErrors(dto)) return;
             bookingController.updateBooking(dto);
         }
 

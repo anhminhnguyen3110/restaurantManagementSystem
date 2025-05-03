@@ -124,6 +124,7 @@ public class RestaurantTableMapView extends JPanel {
             public void onExistingTable(RestaurantTable table, int cx, int cy) {
                 openTableForm(table, r.getId(), cx, cy);
             }
+
             @Override
             public void onNewRegion(int sx, int sy, int ex, int ey) {
                 openTableForm(null, r.getId(), sx, sy, ex, ey);

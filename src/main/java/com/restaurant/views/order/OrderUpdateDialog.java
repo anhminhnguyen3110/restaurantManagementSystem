@@ -3,6 +3,7 @@ package com.restaurant.views.order;
 import com.restaurant.constants.OrderType;
 import com.restaurant.controllers.*;
 import com.restaurant.di.Injector;
+import com.restaurant.dtos.order.CreateOrderDto;
 import com.restaurant.dtos.order.UpdateOrderDto;
 import com.restaurant.dtos.orderItem.GetOrderItemDto;
 import com.restaurant.dtos.payment.GetPaymentDto;
@@ -11,7 +12,8 @@ import com.restaurant.models.Order;
 import com.restaurant.models.Payment;
 import com.restaurant.models.RestaurantTable;
 import com.restaurant.models.Shipment;
-import com.restaurant.utils.validators.OrderInputValidator;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 import com.restaurant.views.orderItem.OrderItemFormDialog;
 import com.restaurant.views.payment.PaymentFormDialog;
 import com.restaurant.views.shipment.ShipmentFormDialog;
@@ -201,19 +203,22 @@ public class OrderUpdateDialog extends JDialog {
         if (type == OrderType.DINE_IN && currentShipment != null) {
             currentShipment = null;
         }
+
         int tableId = (cbTable.isVisible() && cbTable.getSelectedItem() != null)
                 ? ((RestaurantTable) cbTable.getSelectedItem()).getId()
                 : 0;
-        List<String> errors = OrderInputValidator.validate(type, tableId);
-        if (!errors.isEmpty()) {
-            JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Errors", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        UpdateOrderDto d = new UpdateOrderDto();
-        d.setId(order.getId());
-        d.setOrderType(type);
-        d.setRestaurantTableId(tableId);
-        orderController.updateOrder(d);
+
+        UpdateOrderDto dto = new UpdateOrderDto();
+        dto.setId(order.getId());
+        dto.setOrderType(type);
+        dto.setRestaurantTableId(tableId);
+        dto.setRestaurantId(order.getRestaurant().getId());
+
+        Validator<CreateOrderDto, UpdateOrderDto> v =
+                ValidatorFactory.getUpdateValidator(UpdateOrderDto.class);
+        if (!v.triggerUpdateErrors(dto)) return;
+
+        orderController.updateOrder(dto);
         originalType = type;
         originalTableId = tableId;
         btnSaveOrder.setText("Saved!");

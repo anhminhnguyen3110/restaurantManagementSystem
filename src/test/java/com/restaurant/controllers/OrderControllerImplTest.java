@@ -13,7 +13,6 @@ import com.restaurant.dtos.order.UpdateOrderDto;
 import com.restaurant.models.Order;
 import com.restaurant.models.Restaurant;
 import com.restaurant.models.RestaurantTable;
-import com.restaurant.models.Shipment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

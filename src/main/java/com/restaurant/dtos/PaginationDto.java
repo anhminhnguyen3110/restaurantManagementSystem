@@ -1,6 +1,6 @@
 package com.restaurant.dtos;
 
-public class PaginationDto {
+public abstract class PaginationDto {
     private int page = 0;
     private int size = 20;
     private String sortBy = "id";

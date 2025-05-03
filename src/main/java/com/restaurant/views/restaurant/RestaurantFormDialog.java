@@ -6,11 +6,11 @@ import com.restaurant.di.Injector;
 import com.restaurant.dtos.restaurant.CreateRestaurantDto;
 import com.restaurant.dtos.restaurant.UpdateRestaurantDto;
 import com.restaurant.models.Restaurant;
-import com.restaurant.utils.validators.RestaurantInputValidator;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
 
 public class RestaurantFormDialog extends JDialog {
     private final JTextField txtName = new JTextField(15);
@@ -94,34 +94,24 @@ public class RestaurantFormDialog extends JDialog {
             dto.setMaxX(maxX);
             dto.setMaxY(maxY);
 
-            List<String> errs = RestaurantInputValidator.validate(dto);
-            if (!errs.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        String.join("\n", errs),
-                        "Validation Error",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            Validator<CreateRestaurantDto, UpdateRestaurantDto> v =
+                    ValidatorFactory.getCreateValidator(CreateRestaurantDto.class);
+            if (!v.triggerCreateErrors(dto)) return;
+
             controller.createRestaurant(dto);
         } else {
             UpdateRestaurantDto dto = new UpdateRestaurantDto();
             dto.setId(existing.getId());
             dto.setName(name);
             dto.setAddress(addr);
-            dto.setMaxX(existing.getMaxX());
-            dto.setMaxY(existing.getMaxY());
-            if (existing.getStatus() != null) {
-                dto.setStatus(existing.getStatus());
-            }
+            dto.setMaxX(maxX == 0 ? existing.getMaxX() : maxX);
+            dto.setMaxY(maxY == 0 ? existing.getMaxY() : maxY);
+            dto.setStatus(existing.getStatus());
 
-            List<String> errs = RestaurantInputValidator.validate(dto);
-            if (!errs.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                        String.join("\n", errs),
-                        "Validation Error",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            Validator<CreateRestaurantDto, UpdateRestaurantDto> v =
+                    ValidatorFactory.getUpdateValidator(UpdateRestaurantDto.class);
+            if (!v.triggerUpdateErrors(dto)) return;
+
             controller.updateRestaurant(dto);
         }
 

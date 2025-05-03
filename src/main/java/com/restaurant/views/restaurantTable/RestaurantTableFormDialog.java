@@ -6,7 +6,8 @@ import com.restaurant.dtos.restaurantTable.CreateRestaurantTableDto;
 import com.restaurant.dtos.restaurantTable.GetRestaurantTableDto;
 import com.restaurant.dtos.restaurantTable.UpdateRestaurantTableDto;
 import com.restaurant.models.RestaurantTable;
-import com.restaurant.utils.validators.RestaurantTableInputValidator;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -110,11 +111,11 @@ public class RestaurantTableFormDialog extends JDialog {
             dto.setStartY(sy);
             dto.setEndX(ex);
             dto.setEndY(ey);
-            List<String> errors = RestaurantTableInputValidator.validate(dto);
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+
+            Validator<CreateRestaurantTableDto, UpdateRestaurantTableDto> v =
+                    ValidatorFactory.getCreateValidator(CreateRestaurantTableDto.class);
+            if (!v.triggerCreateErrors(dto)) return;
+
             controller.createTable(dto);
         } else {
             UpdateRestaurantTableDto dto = new UpdateRestaurantTableDto();
@@ -126,11 +127,11 @@ public class RestaurantTableFormDialog extends JDialog {
             dto.setStartY(sy);
             dto.setEndX(ex);
             dto.setEndY(ey);
-            List<String> errors = RestaurantTableInputValidator.validate(dto);
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+
+            Validator<CreateRestaurantTableDto, UpdateRestaurantTableDto> v =
+                    ValidatorFactory.getUpdateValidator(UpdateRestaurantTableDto.class);
+            if (!v.triggerUpdateErrors(dto)) return;
+
             controller.updateTable(dto);
         }
 

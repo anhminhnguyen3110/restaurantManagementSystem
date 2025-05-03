@@ -10,12 +10,12 @@ import com.restaurant.dtos.menuItem.UpdateMenuItemDto;
 import com.restaurant.models.Menu;
 import com.restaurant.models.MenuItem;
 import com.restaurant.models.Restaurant;
-import com.restaurant.utils.validators.MenuItemInputValidator;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.util.List;
 
 public class MenuItemFormDialog extends JDialog {
     private final MenuItemController menuItemController;
@@ -23,7 +23,6 @@ public class MenuItemFormDialog extends JDialog {
     private final MenuController menuController;
     private final MenuItem existing;
     private final Runnable onSaved;
-
     private final JComboBox<Restaurant> cmbRestaurant = new JComboBox<>();
     private final JComboBox<Menu> cmbMenu = new JComboBox<>();
     private final JTextField txtName = new JTextField(15);
@@ -51,39 +50,51 @@ public class MenuItemFormDialog extends JDialog {
         c.insets = new Insets(5, 5, 5, 5);
         c.anchor = GridBagConstraints.WEST;
 
-        c.gridx = 0; c.gridy = 0;
+        c.gridx = 0;
+        c.gridy = 0;
         p.add(new JLabel("Restaurant:"), c);
-        restaurantController.findAllRestaurants().forEach(cmbRestaurant::addItem);
-        cmbRestaurant.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean foc) {
-                super.getListCellRendererComponent(list, value, index, sel, foc);
-                setText(value instanceof Restaurant ? ((Restaurant) value).getName() : "");
-                return this;
-            }
-        });
         c.gridx = 1;
-        p.add(cmbRestaurant, c);
+        if (existing == null) {
+            for (Restaurant r : restaurantController.findAllRestaurants()) cmbRestaurant.addItem(r);
+            cmbRestaurant.setRenderer(new DefaultListCellRenderer() {
+                @Override
+                public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean foc) {
+                    super.getListCellRendererComponent(list, value, index, sel, foc);
+                    setText(value instanceof Restaurant ? ((Restaurant) value).getName() : "");
+                    return this;
+                }
+            });
+            p.add(cmbRestaurant, c);
+        } else {
+            p.add(new JLabel(existing.getMenu().getRestaurant().getName()), c);
+        }
 
-        c.gridx = 0; c.gridy = 1;
+        c.gridx = 0;
+        c.gridy = 1;
         p.add(new JLabel("Menu:"), c);
-        cmbMenu.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean foc) {
-                super.getListCellRendererComponent(list, value, index, sel, foc);
-                setText(value instanceof Menu ? ((Menu) value).getName() : "");
-                return this;
-            }
-        });
         c.gridx = 1;
-        p.add(cmbMenu, c);
+        if (existing == null) {
+            cmbMenu.setRenderer(new DefaultListCellRenderer() {
+                @Override
+                public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean sel, boolean foc) {
+                    super.getListCellRendererComponent(list, value, index, sel, foc);
+                    setText(value instanceof Menu ? ((Menu) value).getName() : "");
+                    return this;
+                }
+            });
+            p.add(cmbMenu, c);
+        } else {
+            p.add(new JLabel(existing.getMenu().getName()), c);
+        }
 
-        c.gridx = 0; c.gridy = 2;
+        c.gridx = 0;
+        c.gridy = 2;
         p.add(new JLabel("Name:"), c);
         c.gridx = 1;
         p.add(txtName, c);
 
-        c.gridx = 0; c.gridy = 3;
+        c.gridx = 0;
+        c.gridy = 3;
         p.add(new JLabel("Description:"), c);
         txtDescription.setLineWrap(true);
         txtDescription.setWrapStyleWord(true);
@@ -91,7 +102,8 @@ public class MenuItemFormDialog extends JDialog {
         c.gridx = 1;
         p.add(descScroll, c);
 
-        c.gridx = 0; c.gridy = 4;
+        c.gridx = 0;
+        c.gridy = 4;
         p.add(new JLabel("Price:"), c);
         c.gridx = 1;
         p.add(txtPrice, c);
@@ -103,31 +115,26 @@ public class MenuItemFormDialog extends JDialog {
         getContentPane().add(p, BorderLayout.CENTER);
         getContentPane().add(buttons, BorderLayout.SOUTH);
 
-        cmbRestaurant.addActionListener(e -> {
-            cmbMenu.removeAllItems();
-            Restaurant r = (Restaurant) cmbRestaurant.getSelectedItem();
-            if (r != null) {
-                GetMenuDto mdto = new GetMenuDto();
-                mdto.setRestaurantName(r.getName());
-                menuController.findMenus(mdto).forEach(cmbMenu::addItem);
-            }
-        });
+        if (existing == null) {
+            cmbRestaurant.addActionListener(e -> {
+                cmbMenu.removeAllItems();
+                Restaurant r = (Restaurant) cmbRestaurant.getSelectedItem();
+                if (r != null) {
+                    GetMenuDto mdto = new GetMenuDto();
+                    mdto.setRestaurantName(r.getName());
+                    menuController.findMenus(mdto).forEach(cmbMenu::addItem);
+                }
+            });
+            cmbRestaurant.setSelectedIndex(0);
+        }
 
         btnSave.addActionListener(e -> onSave());
         btnCancel.addActionListener(e -> dispose());
-
-        System.out.println("Menu name: " + (existing != null ? existing.getName() : "New Menu Item"));
 
         if (existing != null) {
             txtName.setText(existing.getName());
             txtDescription.setText(existing.getDescription());
             txtPrice.setText(String.valueOf(existing.getPrice()));
-            cmbRestaurant.setSelectedItem(existing.getMenu().getRestaurant());
-            cmbMenu.setSelectedItem(existing.getMenu());
-            cmbRestaurant.setEnabled(false);
-            cmbMenu.setEnabled(false);
-        } else {
-            cmbRestaurant.setSelectedIndex(0);
         }
     }
 
@@ -137,27 +144,22 @@ public class MenuItemFormDialog extends JDialog {
         double price;
         try {
             price = Double.parseDouble(txtPrice.getText().trim());
-        } catch (Exception e) {
+        } catch (Exception ex) {
             price = 0;
-        }
-        Menu m = (Menu) cmbMenu.getSelectedItem();
-
-        if (name.isEmpty() || (existing == null && m == null)) {
-            JOptionPane.showMessageDialog(this, "Name and Menu are required.", "Validation", JOptionPane.ERROR_MESSAGE);
-            return;
         }
 
         if (existing == null) {
+            Menu m = (Menu) cmbMenu.getSelectedItem();
             CreateMenuItemDto dto = new CreateMenuItemDto();
             dto.setName(name);
             dto.setDescription(desc);
             dto.setPrice(price);
-            dto.setMenuId(m.getId());
-            List<String> errors = MenuItemInputValidator.validate(dto);
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            dto.setMenuId(m != null ? m.getId() : 0);
+
+            Validator<CreateMenuItemDto, UpdateMenuItemDto> v =
+                    ValidatorFactory.getCreateValidator(CreateMenuItemDto.class);
+            if (!v.triggerCreateErrors(dto)) return;
+
             menuItemController.createMenuItem(dto);
         } else {
             UpdateMenuItemDto dto = new UpdateMenuItemDto();
@@ -165,11 +167,12 @@ public class MenuItemFormDialog extends JDialog {
             dto.setName(name);
             dto.setDescription(desc);
             dto.setPrice(price);
-            List<String> errors = MenuItemInputValidator.validate(dto);
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            dto.setMenuId(existing.getMenu().getId());
+
+            Validator<CreateMenuItemDto, UpdateMenuItemDto> v =
+                    ValidatorFactory.getUpdateValidator(UpdateMenuItemDto.class);
+            if (!v.triggerUpdateErrors(dto)) return;
+
             menuItemController.updateMenuItem(dto);
         }
 

@@ -7,12 +7,16 @@ import com.restaurant.di.Injectable;
 import com.restaurant.dtos.restaurant.CreateRestaurantDto;
 import com.restaurant.dtos.restaurant.GetRestaurantDto;
 import com.restaurant.dtos.restaurant.UpdateRestaurantDto;
+import com.restaurant.events.ErrorEvent;
 import com.restaurant.models.Restaurant;
+import com.restaurant.pubsub.ErrorPubSubService;
+import com.restaurant.pubsub.PubSubService;
 
 import java.util.List;
 
 @Injectable
 public class RestaurantControllerImpl implements RestaurantController {
+    private final PubSubService pubSubService = ErrorPubSubService.getInstance();
     @Inject
     private RestaurantDAO restaurantDAO;
 
@@ -23,7 +27,7 @@ public class RestaurantControllerImpl implements RestaurantController {
     @Override
     public void createRestaurant(CreateRestaurantDto dto) {
         if (restaurantDAO.existsByNameAndAddress(dto.getName(), dto.getAddress())) {
-            System.out.println("Duplicate restaurant: " + dto.getName());
+            pubSubService.publish(new ErrorEvent("Duplicate restaurant: " + dto.getName()));
             return;
         }
         Restaurant r = new Restaurant();
@@ -37,12 +41,15 @@ public class RestaurantControllerImpl implements RestaurantController {
     @Override
     public void updateRestaurant(UpdateRestaurantDto dto) {
         Restaurant r = restaurantDAO.getById(dto.getId());
-        if (r == null) return;
+        if (r == null) {
+            pubSubService.publish(new ErrorEvent("Restaurant not found: " + dto.getId()));
+            return;
+        }
         boolean nameChanged = !r.getName().equals(dto.getName());
         boolean addressChanged = !r.getAddress().equals(dto.getAddress());
         if ((nameChanged || addressChanged)
                 && restaurantDAO.existsByNameAndAddress(dto.getName(), dto.getAddress())) {
-            System.out.println("Duplicate restaurant: " + dto.getName());
+            pubSubService.publish(new ErrorEvent("Duplicate restaurant: " + dto.getName()));
             return;
         }
         r.setName(dto.getName());

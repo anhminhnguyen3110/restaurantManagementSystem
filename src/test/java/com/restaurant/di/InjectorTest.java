@@ -16,28 +16,6 @@ class InjectorTest {
         instanceField.set(null, null);
     }
 
-    private static class NoDefaultConstructor {
-        public NoDefaultConstructor(String arg) { }
-    }
-
-    private static class ServiceA { }
-
-    private static class ServiceB {
-        @Inject
-        private ServiceA serviceA;
-        public ServiceA getServiceA() {
-            return serviceA;
-        }
-    }
-
-    private static class ServiceC {
-        @Inject
-        private ServiceB serviceB;
-        public ServiceB getServiceB() {
-            return serviceB;
-        }
-    }
-
     @Test
     void testSingletonInjector() {
         Injector injector1 = Injector.getInstance();
@@ -94,5 +72,31 @@ class InjectorTest {
         injector.register(ServiceA.class, second);
         ServiceA result = injector.getInstance(ServiceA.class);
         assertSame(second, result);
+    }
+
+    private static class NoDefaultConstructor {
+        public NoDefaultConstructor(String arg) {
+        }
+    }
+
+    private static class ServiceA {
+    }
+
+    private static class ServiceB {
+        @Inject
+        private ServiceA serviceA;
+
+        public ServiceA getServiceA() {
+            return serviceA;
+        }
+    }
+
+    private static class ServiceC {
+        @Inject
+        private ServiceB serviceB;
+
+        public ServiceB getServiceB() {
+            return serviceB;
+        }
     }
 }

@@ -9,13 +9,17 @@ import com.restaurant.dtos.restaurantTable.CreateRestaurantTableDto;
 import com.restaurant.dtos.restaurantTable.GetRestaurantTableDto;
 import com.restaurant.dtos.restaurantTable.GetRestaurantTableForBookingDto;
 import com.restaurant.dtos.restaurantTable.UpdateRestaurantTableDto;
+import com.restaurant.events.ErrorEvent;
 import com.restaurant.models.Restaurant;
 import com.restaurant.models.RestaurantTable;
+import com.restaurant.pubsub.ErrorPubSubService;
+import com.restaurant.pubsub.PubSubService;
 
 import java.util.List;
 
 @Injectable
 public class RestaurantTableControllerImpl implements RestaurantTableController {
+    private final PubSubService pubSubService = ErrorPubSubService.getInstance();
     @Inject
     private RestaurantTableDAO restaurantTableDAO;
     @Inject
@@ -29,23 +33,19 @@ public class RestaurantTableControllerImpl implements RestaurantTableController 
     public void createTable(CreateRestaurantTableDto dto) {
         if (restaurantTableDAO.existsByRestaurantIdAndStartPosition(
                 dto.getRestaurantId(), dto.getStartX(), dto.getStartY(), null)) {
-            System.out.println("Position (" + dto.getStartX() + "," + dto.getStartY() + ") is already taken in restaurant " + dto.getRestaurantId());
+            pubSubService.publish(new ErrorEvent("Position (" + dto.getStartX() + "," + dto.getStartY() + ") is already taken in restaurant " + dto.getRestaurantId()));
             return;
         }
-
-        if (
-                restaurantTableDAO.existsByRestaurantIdAndEndPosition(
-                        dto.getRestaurantId(), dto.getEndX(), dto.getEndY(), null)) {
-            System.out.println("Position (" + dto.getEndX() + "," + dto.getEndY() + ") is already taken in restaurant " + dto.getRestaurantId());
+        if (restaurantTableDAO.existsByRestaurantIdAndEndPosition(
+                dto.getRestaurantId(), dto.getEndX(), dto.getEndY(), null)) {
+            pubSubService.publish(new ErrorEvent("Position (" + dto.getEndX() + "," + dto.getEndY() + ") is already taken in restaurant " + dto.getRestaurantId()));
             return;
         }
-
         if (restaurantTableDAO.existsByRestaurantIdAndNumber(
                 dto.getRestaurantId(), dto.getNumber(), null)) {
-            System.out.println("Table number " + dto.getNumber() + " already exists in restaurant " + dto.getRestaurantId());
+            pubSubService.publish(new ErrorEvent("Table number " + dto.getNumber() + " already exists in restaurant " + dto.getRestaurantId()));
             return;
         }
-
         Restaurant r = restaurantDAO.getById(dto.getRestaurantId());
         RestaurantTable t = new RestaurantTable();
         t.setRestaurant(r);
@@ -55,42 +55,39 @@ public class RestaurantTableControllerImpl implements RestaurantTableController 
         t.setStartY(dto.getStartY());
         t.setEndX(dto.getEndX());
         t.setEndY(dto.getEndY());
-
         restaurantTableDAO.add(t);
     }
 
     @Override
     public void updateTable(UpdateRestaurantTableDto dto) {
         RestaurantTable t = restaurantTableDAO.getById(dto.getId());
-        if (t == null) return;
-
+        if (t == null) {
+            pubSubService.publish(new ErrorEvent("Table not found: " + dto.getId()));
+            return;
+        }
         if (restaurantTableDAO.existsByRestaurantIdAndStartPosition(
                 dto.getRestaurantId(), dto.getStartX(), dto.getStartY(), dto.getId())) {
-            System.out.println("Position (" + dto.getStartX() + "," + dto.getStartY() + ") is already taken in restaurant " + dto.getRestaurantId());
+            pubSubService.publish(new ErrorEvent("Position (" + dto.getStartX() + "," + dto.getStartY() + ") is already taken in restaurant " + dto.getRestaurantId()));
             return;
         }
-
         if (restaurantTableDAO.existsByRestaurantIdAndEndPosition(
                 dto.getRestaurantId(), dto.getEndX(), dto.getEndY(), dto.getId())) {
-            System.out.println("Position (" + dto.getEndX() + "," + dto.getEndY() + ") is already taken in restaurant " + dto.getRestaurantId());
+            pubSubService.publish(new ErrorEvent("Position (" + dto.getEndX() + "," + dto.getEndY() + ") is already taken in restaurant " + dto.getRestaurantId()));
             return;
         }
-
         if (restaurantTableDAO.existsByRestaurantIdAndNumber(
                 dto.getRestaurantId(), dto.getNumber(), dto.getId())) {
-            System.out.println("Table number " + dto.getNumber() + " already exists in restaurant " + dto.getRestaurantId());
+            pubSubService.publish(new ErrorEvent("Table number " + dto.getNumber() + " already exists in restaurant " + dto.getRestaurantId()));
             return;
         }
         Restaurant r = restaurantDAO.getById(dto.getRestaurantId());
         t.setRestaurant(r);
         t.setNumber(dto.getNumber());
         t.setCapacity(dto.getCapacity());
-
         t.setStartX(dto.getStartX());
         t.setStartY(dto.getStartY());
         t.setEndX(dto.getEndX());
         t.setEndY(dto.getEndY());
-
         restaurantTableDAO.update(t);
     }
 

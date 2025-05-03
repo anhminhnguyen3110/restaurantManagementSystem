@@ -6,7 +6,6 @@ import com.restaurant.controllers.RestaurantController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.orderItem.GetOrderItemDto;
 import com.restaurant.models.*;
-import com.restaurant.views.order.AddOrderItemDialog;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -54,8 +53,6 @@ public class OrderItemListView extends JPanel {
         filters.add(cbRestaurantFilter);
         JButton btnReset = new JButton("Reset");
         filters.add(btnReset);
-        JButton btnAdd = new JButton("Add");
-        filters.add(btnAdd);
         add(filters, BorderLayout.NORTH);
 
         model = new DefaultTableModel(
@@ -110,14 +107,6 @@ public class OrderItemListView extends JPanel {
         btnReset.addActionListener(e -> {
             resetFilters();
             loadData();
-        });
-
-        btnAdd.addActionListener(e -> {
-            Dialog owner = (Dialog) SwingUtilities.getWindowAncestor(this);
-            new AddOrderItemDialog(owner, order, v -> {
-                loadData();
-                onUpdated.run();
-            }).setVisible(true);
         });
 
         table.getTableHeader().addMouseListener(new java.awt.event.MouseAdapter() {

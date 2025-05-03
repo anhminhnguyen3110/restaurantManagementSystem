@@ -31,16 +31,16 @@ public abstract class BaseModel {
         return id;
     }
 
+    public void setId(int id) {
+        // Testing purpose only
+        this.id = id;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setId(int id) {
-        // Testing purpose only
-        this.id = id;
     }
 }

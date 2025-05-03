@@ -7,13 +7,17 @@ import com.restaurant.di.Inject;
 import com.restaurant.di.Injectable;
 import com.restaurant.dtos.payment.CreatePaymentDto;
 import com.restaurant.dtos.payment.GetPaymentDto;
+import com.restaurant.events.ErrorEvent;
 import com.restaurant.models.Order;
 import com.restaurant.models.Payment;
+import com.restaurant.pubsub.ErrorPubSubService;
+import com.restaurant.pubsub.PubSubService;
 
 import java.util.List;
 
 @Injectable
 public class PaymentControllerImpl implements PaymentController {
+    private final PubSubService pubSubService = ErrorPubSubService.getInstance();
     @Inject
     private PaymentDAO paymentDAO;
     @Inject
@@ -26,7 +30,7 @@ public class PaymentControllerImpl implements PaymentController {
     @Override
     public void createPayment(CreatePaymentDto dto) {
         if (paymentDAO.existsByOrder(dto.getOrderId())) {
-            System.out.println("Payment already exists for order " + dto.getOrderId());
+            pubSubService.publish(new ErrorEvent("Payment already exists for order " + dto.getOrderId()));
             return;
         }
         Order order = orderDAO.getById(dto.getOrderId());

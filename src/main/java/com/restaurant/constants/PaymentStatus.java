@@ -12,15 +12,6 @@ public enum PaymentStatus {
         this.status = status;
     }
 
-    public String getStatus() {
-        return status.toLowerCase().replace("_", " ");
-    }
-
-    @Override
-    public String toString() {
-        return this.getStatus();
-    }
-
     public static PaymentStatus fromString(String status) {
         for (PaymentStatus paymentStatus : PaymentStatus.values()) {
             if (paymentStatus.status.equalsIgnoreCase(status)) {
@@ -28,5 +19,14 @@ public enum PaymentStatus {
             }
         }
         throw new IllegalArgumentException("No constant with text " + status + " found");
+    }
+
+    public String getStatus() {
+        return status.toLowerCase().replace("_", " ");
+    }
+
+    @Override
+    public String toString() {
+        return this.getStatus();
     }
 }

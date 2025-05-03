@@ -10,15 +10,19 @@ import com.restaurant.di.Injectable;
 import com.restaurant.dtos.booking.CreateBookingDto;
 import com.restaurant.dtos.booking.GetBookingsDto;
 import com.restaurant.dtos.booking.UpdateBookingDto;
+import com.restaurant.events.ErrorEvent;
 import com.restaurant.models.Booking;
 import com.restaurant.models.Customer;
 import com.restaurant.models.RestaurantTable;
+import com.restaurant.pubsub.ErrorPubSubService;
+import com.restaurant.pubsub.PubSubService;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Injectable
 public class BookingControllerImpl implements BookingController {
+    private final PubSubService pubSubService = ErrorPubSubService.getInstance();
     @Inject
     private BookingDAO bookingDAO;
     @Inject
@@ -34,13 +38,13 @@ public class BookingControllerImpl implements BookingController {
     public void createBooking(CreateBookingDto dto) {
         LocalDate today = LocalDate.now();
         if (dto.getDate().isBefore(today)) {
-            System.out.println("Booking date must be in the future");
+            pubSubService.publish(new ErrorEvent("Booking date must be in the future"));
             return;
         }
         BookingTimeSlot start = dto.getStartTime();
         BookingTimeSlot end = dto.getEndTime();
         if (end.ordinal() <= start.ordinal()) {
-            System.out.println("End time must be after start time");
+            pubSubService.publish(new ErrorEvent("End time must be after start time"));
             return;
         }
         RestaurantTable table = tableDAO.getById(dto.getTableId());
@@ -49,9 +53,8 @@ public class BookingControllerImpl implements BookingController {
         filter.setDate(dto.getDate());
         List<Booking> existing = bookingDAO.find(filter);
         for (Booking b : existing) {
-            if (b.getStartTime().ordinal() < end.ordinal()
-                    && b.getEndTime().ordinal() > start.ordinal()) {
-                System.out.println("Overlapping booking detected: id=" + b.getId());
+            if (b.getStartTime().ordinal() < end.ordinal() && b.getEndTime().ordinal() > start.ordinal()) {
+                pubSubService.publish(new ErrorEvent("Overlapping booking detected: id=" + b.getId()));
                 return;
             }
         }
@@ -82,18 +85,18 @@ public class BookingControllerImpl implements BookingController {
     public void updateBooking(UpdateBookingDto dto) {
         Booking booking = bookingDAO.getById(dto.getId());
         if (booking == null) {
+            pubSubService.publish(new ErrorEvent("Booking not found for ID " + dto.getId()));
             return;
         }
-
         LocalDate today = LocalDate.now();
         if (dto.getDate().isBefore(today)) {
-            System.out.println("Booking date must be in the future");
+            pubSubService.publish(new ErrorEvent("Booking date must be in the future"));
             return;
         }
         BookingTimeSlot start = dto.getStartTime();
         BookingTimeSlot end = dto.getEndTime();
         if (end.ordinal() <= start.ordinal()) {
-            System.out.println("End time must be after start time");
+            pubSubService.publish(new ErrorEvent("End time must be after start time"));
             return;
         }
         RestaurantTable table = tableDAO.getById(dto.getTableId());
@@ -103,11 +106,9 @@ public class BookingControllerImpl implements BookingController {
         if (dto.getStatus() != null) {
             booking.setStatus(dto.getStatus());
         }
-
-        if (!(booking.getTable().getId() == table.getId())) {
+        if (booking.getTable().getId() != table.getId()) {
             booking.setTable(table);
         }
-
         Customer c = booking.getCustomer();
         boolean changed = false;
         if (dto.getCustomerName() != null && !dto.getCustomerName().equals(c.getName())) {
@@ -125,7 +126,6 @@ public class BookingControllerImpl implements BookingController {
         if (changed) {
             customerDAO.update(c);
         }
-
         bookingDAO.update(booking);
     }
 

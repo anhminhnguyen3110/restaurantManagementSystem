@@ -7,11 +7,11 @@ import com.restaurant.dtos.menu.CreateMenuDto;
 import com.restaurant.dtos.menu.UpdateMenuDto;
 import com.restaurant.models.Menu;
 import com.restaurant.models.Restaurant;
-import com.restaurant.utils.validators.MenuInputValidator;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
 
 public class MenuFormDialog extends JDialog {
     private final JTextField nameField = new JTextField(15);
@@ -31,13 +31,12 @@ public class MenuFormDialog extends JDialog {
         this.existing = existing;
         this.onSaved = onSaved;
 
-        List<Restaurant> restaurants = restaurantController.findAllRestaurants();
-        restaurants.forEach(restaurantCombo::addItem);
+        for (Restaurant r : restaurantController.findAllRestaurants()) {
+            restaurantCombo.addItem(r);
+        }
         restaurantCombo.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(
-                    JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus
-            ) {
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 setText(value instanceof Restaurant ? ((Restaurant) value).getName() : "");
                 return this;
@@ -78,18 +77,16 @@ public class MenuFormDialog extends JDialog {
         String name = nameField.getText().trim();
         String desc = descField.getText().trim();
         Restaurant r = (Restaurant) restaurantCombo.getSelectedItem();
+
         if (existing == null) {
             CreateMenuDto dto = new CreateMenuDto();
             dto.setName(name);
             dto.setDescription(desc);
             dto.setRestaurantId(r != null ? r.getId() : 0);
 
-            List<String> errors = MenuInputValidator.validate(dto);
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
+            Validator<CreateMenuDto, UpdateMenuDto> v =
+                    ValidatorFactory.getCreateValidator(CreateMenuDto.class);
+            if (!v.triggerCreateErrors(dto)) return;
             menuController.createMenu(dto);
         } else {
             UpdateMenuDto dto = new UpdateMenuDto();
@@ -98,15 +95,14 @@ public class MenuFormDialog extends JDialog {
             dto.setDescription(desc);
             dto.setRestaurantId(r != null ? r.getId() : 0);
 
-            List<String> errors = MenuInputValidator.validate(dto);
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
+            Validator<CreateMenuDto, UpdateMenuDto> v =
+                    ValidatorFactory.getUpdateValidator(UpdateMenuDto.class);
+            if (!v.triggerUpdateErrors(dto)) return;
             menuController.updateMenu(dto);
         }
+
         onSaved.run();
         dispose();
     }
+
 }

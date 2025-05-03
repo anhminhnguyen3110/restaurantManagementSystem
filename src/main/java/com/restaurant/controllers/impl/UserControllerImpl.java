@@ -8,13 +8,17 @@ import com.restaurant.dtos.user.CreateUserDto;
 import com.restaurant.dtos.user.GetUserDto;
 import com.restaurant.dtos.user.LoginUserDto;
 import com.restaurant.dtos.user.UpdateUserDto;
+import com.restaurant.events.ErrorEvent;
 import com.restaurant.models.User;
+import com.restaurant.pubsub.ErrorPubSubService;
+import com.restaurant.pubsub.PubSubService;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.util.List;
 
 @Injectable
 public class UserControllerImpl implements UserController {
+    private final PubSubService pubSubService = ErrorPubSubService.getInstance();
     @Inject
     private UserDAO userDAO;
 
@@ -25,7 +29,7 @@ public class UserControllerImpl implements UserController {
     @Override
     public void createUser(CreateUserDto dto) {
         if (userDAO.existsByUsername(dto.getUsername())) {
-            System.out.println("Username already taken: " + dto.getUsername());
+            pubSubService.publish(new ErrorEvent("Username already taken: " + dto.getUsername()));
             return;
         }
         User u = new User();
@@ -41,7 +45,10 @@ public class UserControllerImpl implements UserController {
     @Override
     public void updateUser(UpdateUserDto dto) {
         User u = userDAO.getById(dto.getId());
-        if (u == null) return;
+        if (u == null) {
+            pubSubService.publish(new ErrorEvent("User not found: " + dto.getId()));
+            return;
+        }
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             u.setPasswordHash(BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt()));
         }
@@ -64,7 +71,7 @@ public class UserControllerImpl implements UserController {
     public User login(LoginUserDto dto) {
         User u = userDAO.findByUsername(dto.getUsername());
         if (u == null || !BCrypt.checkpw(dto.getPassword(), u.getPasswordHash())) {
-            System.out.println("Invalid username or password");
+            pubSubService.publish(new ErrorEvent("Invalid username or password"));
             return null;
         }
         return u;

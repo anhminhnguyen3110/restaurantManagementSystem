@@ -6,11 +6,11 @@ import com.restaurant.di.Injector;
 import com.restaurant.dtos.user.CreateUserDto;
 import com.restaurant.dtos.user.UpdateUserDto;
 import com.restaurant.models.User;
-import com.restaurant.utils.validators.UserInputValidator;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
 
 public class UserFormDialog extends JDialog {
     private final JTextField txtUsername = new JTextField(15);
@@ -115,34 +115,29 @@ public class UserFormDialog extends JDialog {
             dto.setPassword(pwd);
             dto.setEmail(email);
             dto.setRole(role);
-            List<String> errors = UserInputValidator.validate(dto);
-            if (pwd.length() < 8) errors.add("• Password must be at least 8 characters.");
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+
+            Validator<CreateUserDto, UpdateUserDto> v =
+                    ValidatorFactory.getCreateValidator(CreateUserDto.class);
+            if (!v.triggerCreateErrors(dto)) return;
             userController.createUser(dto);
         } else {
             UpdateUserDto dto = new UpdateUserDto();
             dto.setId(existing.getId());
             dto.setName(name);
             if (chkChangePwd.isSelected()) {
-                if (pwd.length() < 8) {
-                    JOptionPane.showMessageDialog(this, "• Password must be at least 8 characters.", "Validation Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
                 dto.setPassword(pwd);
             }
             dto.setEmail(email);
             dto.setRole(role);
             dto.setActive(active);
-            List<String> errors = UserInputValidator.validate(dto);
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            dto.setUsername(existing.getUsername());
+
+            Validator<CreateUserDto, UpdateUserDto> v =
+                    ValidatorFactory.getUpdateValidator(UpdateUserDto.class);
+            if (!v.triggerUpdateErrors(dto)) return;
             userController.updateUser(dto);
         }
+
         onSaved.run();
         dispose();
     }

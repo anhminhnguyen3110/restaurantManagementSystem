@@ -119,7 +119,7 @@ public class MenuDAOImpl implements MenuDAO {
                     .getSingleResult();
 
             menu.getItems().forEach(item -> item.getOrderItems().size());
-    
+
             return menu;
         } catch (NoResultException e) {
             return null;

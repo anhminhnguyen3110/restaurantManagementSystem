@@ -11,7 +11,8 @@ import com.restaurant.dtos.shipment.UpdateShipmentDto;
 import com.restaurant.models.Order;
 import com.restaurant.models.Shipment;
 import com.restaurant.models.User;
-import com.restaurant.utils.validators.ShipmentInputValidator;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,7 +49,7 @@ public class ShipmentFormDialog extends JDialog {
         cbStatus.setSelectedItem(shipment.getStatus());
         txtTracking.setText(shipment.getTrackingNumber());
         cbStatus.setEnabled(true);
-        txtTracking.setEnabled(true);
+        txtTracking.setEnabled(false);
     }
 
     public ShipmentFormDialog(Frame owner, int orderId, Runnable onSaved) {
@@ -113,12 +114,7 @@ public class ShipmentFormDialog extends JDialog {
         String phone = txtPhone.getText().trim();
         String email = txtEmail.getText().trim();
         String address = txtAddress.getText().trim();
-        ShipmentStatus status = isUpdate ? (ShipmentStatus) cbStatus.getSelectedItem() : null;
-        var errors = ShipmentInputValidator.validate(service, shipperId, name, phone, email, address);
-        if (!errors.isEmpty()) {
-            JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+
         if (!isUpdate) {
             CreateShipmentDto dto = new CreateShipmentDto();
             dto.setOrderId(order.getId());
@@ -128,6 +124,10 @@ public class ShipmentFormDialog extends JDialog {
             dto.setCustomerPhone(phone);
             dto.setCustomerEmail(email);
             dto.setCustomerAddress(address);
+
+            Validator<CreateShipmentDto, UpdateShipmentDto> v =
+                    ValidatorFactory.getCreateValidator(CreateShipmentDto.class);
+            if (!v.triggerCreateErrors(dto)) return;
             shipmentController.createShipment(dto);
         } else {
             UpdateShipmentDto dto = new UpdateShipmentDto();
@@ -136,11 +136,17 @@ public class ShipmentFormDialog extends JDialog {
             dto.setServiceType(service);
             dto.setShipperId(shipperId);
             dto.setCustomerName(name);
+            dto.setCustomerPhone(phone);
             dto.setCustomerEmail(email);
             dto.setCustomerAddress(address);
-            dto.setStatus(status);
+            dto.setStatus((ShipmentStatus) cbStatus.getSelectedItem());
+
+            Validator<CreateShipmentDto, UpdateShipmentDto> v =
+                    ValidatorFactory.getUpdateValidator(UpdateShipmentDto.class);
+            if (!v.triggerUpdateErrors(dto)) return;
             shipmentController.updateShipment(dto);
         }
+
         onSaved.run();
         dispose();
     }

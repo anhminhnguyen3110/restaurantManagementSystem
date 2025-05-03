@@ -6,8 +6,9 @@ import com.restaurant.controllers.PaymentController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.payment.CreatePaymentDto;
 import com.restaurant.models.Order;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 import com.restaurant.views.listeners.SimpleDocumentListener;
-import com.restaurant.utils.validators.PaymentInputValidator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,7 +26,6 @@ public class PaymentFormDialog extends JDialog {
     public PaymentFormDialog(Frame owner, int orderId, Runnable onSaved) {
         super(owner, "Payment for Order #" + orderId, true);
         this.order = Injector.getInstance().getInstance(OrderController.class).getOrder(orderId);
-        System.out.println("Order: " + order.getTotalPrice());
         this.onSaved = onSaved;
         this.paymentController = Injector.getInstance().getInstance(PaymentController.class);
 
@@ -86,18 +86,11 @@ public class PaymentFormDialog extends JDialog {
         PaymentMethod method = (PaymentMethod) cbMethod.getSelectedItem();
         double pay;
         try {
-            pay = Double.parseDouble(txtPay.getText());
-        } catch (Exception e) {
+            pay = Double.parseDouble(txtPay.getText().trim());
+        } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Invalid amount", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
-        var errors = PaymentInputValidator.validate(order.getTotalPrice(), method, pay);
-        if (!errors.isEmpty()) {
-            JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
         CreatePaymentDto dto = new CreatePaymentDto();
         dto.setOrderId(order.getId());
         dto.setMethod(method);
@@ -105,8 +98,12 @@ public class PaymentFormDialog extends JDialog {
         if (method == PaymentMethod.CASH) {
             dto.setChangeAmount(pay - order.getTotalPrice());
         }
-        paymentController.createPayment(dto);
 
+        Validator<CreatePaymentDto, ?> v =
+                ValidatorFactory.getCreateValidator(CreatePaymentDto.class);
+        if (!v.triggerCreateErrors(dto)) return;
+
+        paymentController.createPayment(dto);
         onSaved.run();
         dispose();
     }

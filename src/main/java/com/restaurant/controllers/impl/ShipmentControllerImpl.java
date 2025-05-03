@@ -11,15 +11,19 @@ import com.restaurant.di.Injectable;
 import com.restaurant.dtos.shipment.CreateShipmentDto;
 import com.restaurant.dtos.shipment.GetShipmentDto;
 import com.restaurant.dtos.shipment.UpdateShipmentDto;
+import com.restaurant.events.ErrorEvent;
 import com.restaurant.models.Customer;
 import com.restaurant.models.Order;
 import com.restaurant.models.Shipment;
 import com.restaurant.models.User;
+import com.restaurant.pubsub.ErrorPubSubService;
+import com.restaurant.pubsub.PubSubService;
 
 import java.util.List;
 
 @Injectable
 public class ShipmentControllerImpl implements ShipmentController {
+    private final PubSubService pubSubService = ErrorPubSubService.getInstance();
     @Inject
     private ShipmentDAO shipmentDAO;
     @Inject
@@ -36,7 +40,7 @@ public class ShipmentControllerImpl implements ShipmentController {
     @Override
     public void createShipment(CreateShipmentDto dto) {
         if (shipmentDAO.existsPendingByOrder(dto.getOrderId())) {
-            System.out.println("Pending shipment already exists for order " + dto.getOrderId());
+            pubSubService.publish(new ErrorEvent("Pending shipment already exists for order " + dto.getOrderId()));
             return;
         }
         Order order = orderDAO.getById(dto.getOrderId());
@@ -61,30 +65,33 @@ public class ShipmentControllerImpl implements ShipmentController {
     @Override
     public void updateShipment(UpdateShipmentDto dto) {
         Shipment s = shipmentDAO.getById(dto.getId());
-        if (s == null) return;
+        if (s == null) {
+            pubSubService.publish(new ErrorEvent("Shipment not found for ID " + dto.getId()));
+            return;
+        }
+
+        if (shipmentDAO.existsPendingByOrder(dto.getOrderId()) && dto.getOrderId() != s.getOrder().getId()) {
+            pubSubService.publish(new ErrorEvent("Pending shipment already exists for order " + dto.getOrderId()));
+            return;
+        }
         s.setServiceType(dto.getServiceType());
         s.setStatus(dto.getStatus());
         Customer c = s.getCustomer();
-
         if (dto.getCustomerAddress() != null) {
             c.setAddress(dto.getCustomerAddress());
         }
-
         if (dto.getCustomerName() != null) {
             c.setName(dto.getCustomerName());
         }
-
         if (dto.getCustomerEmail() != null) {
             c.setEmail(dto.getCustomerEmail());
         }
-
         if (dto.getServiceType() == ShipmentService.INTERNAL) {
             User shipper = userDAO.getById(dto.getShipperId());
             s.setShipper(shipper);
         } else {
             s.setShipper(null);
         }
-
         shipmentDAO.update(s);
     }
 

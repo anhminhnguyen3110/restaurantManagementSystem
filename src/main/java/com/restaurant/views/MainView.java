@@ -4,7 +4,9 @@ import com.restaurant.constants.UserRole;
 import com.restaurant.controllers.UserController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.user.LoginUserDto;
+import com.restaurant.events.ErrorEvent;
 import com.restaurant.models.User;
+import com.restaurant.pubsub.ErrorPubSubService;
 import com.restaurant.views.booking.BookingListView;
 import com.restaurant.views.menu.MenuListView;
 import com.restaurant.views.menuItem.MenuItemListView;
@@ -20,15 +22,31 @@ import javax.swing.*;
 import java.awt.*;
 
 public class MainView extends JFrame {
+    private static MainView currentInstance;
+
+    private final UserController userController;
     private final JTextField txtUsername = new JTextField(15);
     private final JPasswordField txtPassword = new JPasswordField(15);
     private final JButton btnLogin = new JButton("Login");
-    private final UserController userController;
 
-    public MainView() {
+    private MainView() {
         super("Login");
         initLookAndFeel();
-        userController = Injector.getInstance().getInstance(UserController.class);
+        System.out.println("MainView initialized");
+        ErrorPubSubService.getInstance().subscribe(ErrorEvent.class, event ->
+                SwingUtilities.invokeLater(() -> {
+                    if (currentInstance != null) {
+                        JOptionPane.showMessageDialog(
+                                currentInstance,
+                                event.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                })
+        );
+        Injector injector = Injector.getInstance();
+        this.userController = injector.getInstance(UserController.class);
         buildLoginForm();
         pack();
         setLocationRelativeTo(null);
@@ -36,9 +54,12 @@ public class MainView extends JFrame {
     }
 
     public static void launch() {
+        if (currentInstance != null) {
+            currentInstance.dispose();
+        }
+        currentInstance = new MainView();
         SwingUtilities.invokeLater(() -> {
-            MainView app = new MainView();
-            app.setVisible(true);
+            currentInstance.setVisible(true);
         });
     }
 
@@ -60,28 +81,23 @@ public class MainView extends JFrame {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
-
         gbc.gridx = 0;
         gbc.gridy = 0;
         loginPanel.add(new JLabel("Username:"), gbc);
         gbc.gridx = 1;
         loginPanel.add(txtUsername, gbc);
-
         gbc.gridx = 0;
         gbc.gridy = 1;
         loginPanel.add(new JLabel("Password:"), gbc);
         gbc.gridx = 1;
         loginPanel.add(txtPassword, gbc);
-
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         loginPanel.add(btnLogin, gbc);
-
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(loginPanel, BorderLayout.CENTER);
-
         btnLogin.addActionListener(e -> onLogin());
         getRootPane().setDefaultButton(btnLogin);
     }
@@ -94,10 +110,6 @@ public class MainView extends JFrame {
         dto.setPassword(p);
         User user = userController.login(dto);
         if (user == null) {
-            JOptionPane.showMessageDialog(this,
-                    "Invalid username or password",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
             txtPassword.setText("");
             return;
         }
@@ -107,7 +119,6 @@ public class MainView extends JFrame {
     private void showDashboard(User user) {
         getContentPane().removeAll();
         JTabbedPane tabs = new JTabbedPane();
-
         BookingListView bookingView = new BookingListView();
         MenuListView menuView = new MenuListView();
         MenuItemListView menuItemView = new MenuItemListView();
@@ -119,7 +130,6 @@ public class MainView extends JFrame {
         RestaurantTableMapView tableView = new RestaurantTableMapView();
         ShipmentListView shipmentView = new ShipmentListView();
         UserListView userView = new UserListView();
-
         UserRole role = user.getRole();
 
         if (role == UserRole.OWNER) {
@@ -167,7 +177,6 @@ public class MainView extends JFrame {
         GridBagConstraints dgbc = new GridBagConstraints();
         dgbc.insets = new Insets(10, 10, 10, 10);
         dgbc.anchor = GridBagConstraints.CENTER;
-
         JPanel smallPanel = new JPanel();
         smallPanel.setLayout(new BoxLayout(smallPanel, BoxLayout.Y_AXIS));
         smallPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -175,7 +184,6 @@ public class MainView extends JFrame {
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
         smallPanel.setMaximumSize(new Dimension(300, 180));
-
         JPanel info = new JPanel(new GridLayout(4, 2, 5, 5));
         info.add(new JLabel("Username:"));
         info.add(new JLabel(user.getUsername()));
@@ -187,7 +195,6 @@ public class MainView extends JFrame {
         info.add(new JLabel(role.toString()));
         smallPanel.add(info);
         smallPanel.add(Box.createVerticalStrut(10));
-
         JButton btnLogout = new JButton("Logout");
         btnLogout.setAlignmentX(Component.CENTER_ALIGNMENT);
         btnLogout.addActionListener(e -> {
@@ -195,7 +202,6 @@ public class MainView extends JFrame {
             launch();
         });
         smallPanel.add(btnLogout);
-
         detailTab.add(smallPanel, dgbc);
         tabs.addTab("My Profile", detailTab);
 

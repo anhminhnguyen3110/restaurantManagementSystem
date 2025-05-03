@@ -9,14 +9,18 @@ import com.restaurant.di.Injectable;
 import com.restaurant.dtos.orderItem.CreateOrderItemDto;
 import com.restaurant.dtos.orderItem.GetOrderItemDto;
 import com.restaurant.dtos.orderItem.UpdateOrderItemDto;
+import com.restaurant.events.ErrorEvent;
 import com.restaurant.models.MenuItem;
 import com.restaurant.models.Order;
 import com.restaurant.models.OrderItem;
+import com.restaurant.pubsub.ErrorPubSubService;
+import com.restaurant.pubsub.PubSubService;
 
 import java.util.List;
 
 @Injectable
 public class OrderItemControllerImpl implements OrderItemController {
+    private final PubSubService pubSubService = ErrorPubSubService.getInstance();
     @Inject
     private OrderItemDAO orderItemDAO;
     @Inject
@@ -30,10 +34,8 @@ public class OrderItemControllerImpl implements OrderItemController {
 
     @Override
     public void createOrderItem(CreateOrderItemDto dto) {
-        if (orderItemDAO.existsByOrderAndMenuItem(dto.getOrderId(),
-                dto.getMenuItemId(),
-                dto.getCustomization())) {
-            System.out.println("Duplicate order item for order " + dto.getOrderId());
+        if (orderItemDAO.existsByOrderAndMenuItem(dto.getOrderId(), dto.getMenuItemId(), dto.getCustomization())) {
+            pubSubService.publish(new ErrorEvent("Duplicate order item for order " + dto.getOrderId()));
             return;
         }
         Order order = orderDAO.getById(dto.getOrderId());
@@ -43,42 +45,25 @@ public class OrderItemControllerImpl implements OrderItemController {
         oi.setMenuItem(mi);
         oi.setQuantity(dto.getQuantity());
         oi.setCustomization(dto.getCustomization());
-
-        order.setTotalPrice(
-                order.getTotalPrice() + (mi.getPrice() * dto.getQuantity())
-        );
-
+        order.setTotalPrice(order.getTotalPrice() + (mi.getPrice() * dto.getQuantity()));
         orderDAO.update(order);
-
         orderItemDAO.add(oi);
     }
 
     @Override
     public void updateOrderItem(UpdateOrderItemDto dto) {
-        if (orderItemDAO.existsByOrderAndMenuItem(dto.getOrderId(),
-                dto.getMenuItemId(),
-                dto.getCustomization())) {
-            System.out.println("Duplicate order item for order " + dto.getOrderId());
+        OrderItem oi = orderItemDAO.getById(dto.getId());
+        if (oi == null) {
+            pubSubService.publish(new ErrorEvent("Order item not found: " + dto.getId()));
             return;
         }
-
-        OrderItem oi = orderItemDAO.getById(dto.getId());
-        if (oi == null) return;
-
         if (dto.getQuantity() != 0) {
             Order order = oi.getOrder();
-
-            order.setTotalPrice(order.getTotalPrice() - oi.getQuantity()
-                    * oi.getMenuItem().getPrice());
-
+            order.setTotalPrice(order.getTotalPrice() - oi.getQuantity() * oi.getMenuItem().getPrice());
             oi.setQuantity(dto.getQuantity());
-
-            order.setTotalPrice(order.getTotalPrice() + oi.getQuantity()
-                    * oi.getMenuItem().getPrice());
-
+            order.setTotalPrice(order.getTotalPrice() + oi.getQuantity() * oi.getMenuItem().getPrice());
             orderDAO.update(order);
         }
-
         oi.setStatus(dto.getStatus());
         orderItemDAO.update(oi);
     }
@@ -91,10 +76,11 @@ public class OrderItemControllerImpl implements OrderItemController {
     @Override
     public void deleteOrderItem(int id) {
         OrderItem oi = orderItemDAO.getById(id);
-        if (oi == null) return;
+        if (oi == null) {
+            return;
+        }
         Order order = oi.getOrder();
-        order.setTotalPrice(order.getTotalPrice() - oi.getQuantity()
-                * oi.getMenuItem().getPrice());
+        order.setTotalPrice(order.getTotalPrice() - oi.getQuantity() * oi.getMenuItem().getPrice());
         orderDAO.update(order);
         orderItemDAO.delete(id);
     }

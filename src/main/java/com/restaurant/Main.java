@@ -7,7 +7,7 @@ import com.restaurant.daos.*;
 import com.restaurant.daos.impl.*;
 import com.restaurant.di.Injector;
 import com.restaurant.models.*;
-import com.restaurant.utils.DataSeeder;
+import com.restaurant.seed.DataSeeder;
 import com.restaurant.views.MainView;
 import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.SessionFactory;
@@ -78,75 +78,51 @@ public class Main {
     public static void injectDependencies() {
         Injector injector = Injector.getInstance();
 
-        // Register the SessionFactory with the Injector
         EntityManagerFactory emf = sessionFactory;
         injector.register(EntityManagerFactory.class, emf);
-
-        // Register the DataSeeder with the Injector
         injector.register(DataSeeder.class, new DataSeeder(emf));
 
-        // Register the DAOs with their implementations
         BookingDAO bookingDAO = injector.getInstance(BookingDAOImpl.class);
         injector.register(BookingDAO.class, bookingDAO);
-
         CustomerDAO customerDAO = injector.getInstance(CustomerDAOImpl.class);
         injector.register(CustomerDAO.class, customerDAO);
-
         RestaurantDAO restaurantDAO = injector.getInstance(RestaurantDAOImpl.class);
         injector.register(RestaurantDAO.class, restaurantDAO);
-
         MenuDAO menuDAO = injector.getInstance(MenuDAOImpl.class);
         injector.register(MenuDAO.class, menuDAO);
-
         MenuItemDAO menuItemDAO = injector.getInstance(MenuItemDAOImpl.class);
         injector.register(MenuItemDAO.class, menuItemDAO);
-
         OrderDAO orderDAO = injector.getInstance(OrderDAOImpl.class);
         injector.register(OrderDAO.class, orderDAO);
-
         OrderItemDAO orderItemDAO = injector.getInstance(OrderItemDAOImpl.class);
         injector.register(OrderItemDAO.class, orderItemDAO);
-
         PaymentDAO paymentDAO = injector.getInstance(PaymentDAOImpl.class);
         injector.register(PaymentDAO.class, paymentDAO);
-
         RestaurantTableDAO restaurantTableDAO = injector.getInstance(RestaurantTableDAOImpl.class);
         injector.register(RestaurantTableDAO.class, restaurantTableDAO);
-
         ShipmentDAO shipmentDAO = injector.getInstance(ShipmentDAOImpl.class);
         injector.register(ShipmentDAO.class, shipmentDAO);
-
         UserDAO userDAO = injector.getInstance(UserDAOImpl.class);
         injector.register(UserDAO.class, userDAO);
 
-        // Register the Controllers with dependencies
         BookingController bookingController = injector.getInstance(BookingControllerImpl.class);
         injector.register(BookingController.class, bookingController);
-
         MenuController menuController = injector.getInstance(MenuControllerImpl.class);
         injector.register(MenuController.class, menuController);
-
         MenuItemController menuItemController = injector.getInstance(MenuItemControllerImpl.class);
         injector.register(MenuItemController.class, menuItemController);
-
         OrderController orderController = injector.getInstance(OrderControllerImpl.class);
         injector.register(OrderController.class, orderController);
-
         OrderItemController orderItemController = injector.getInstance(OrderItemControllerImpl.class);
         injector.register(OrderItemController.class, orderItemController);
-
         PaymentController paymentController = injector.getInstance(PaymentControllerImpl.class);
         injector.register(PaymentController.class, paymentController);
-
         RestaurantTableController restaurantTableController = injector.getInstance(RestaurantTableControllerImpl.class);
         injector.register(RestaurantTableController.class, restaurantTableController);
-
         ShipmentController shipmentController = injector.getInstance(ShipmentControllerImpl.class);
         injector.register(ShipmentController.class, shipmentController);
-
         UserController userController = injector.getInstance(UserControllerImpl.class);
         injector.register(UserController.class, userController);
-
         RestaurantController restaurantController = injector.getInstance(RestaurantControllerImpl.class);
         injector.register(RestaurantController.class, restaurantController);
 

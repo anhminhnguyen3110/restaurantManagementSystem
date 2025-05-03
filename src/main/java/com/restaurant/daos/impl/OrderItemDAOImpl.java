@@ -1,6 +1,5 @@
 package com.restaurant.daos.impl;
 
-import com.restaurant.constants.OrderItemStatus;
 import com.restaurant.daos.OrderItemDAO;
 import com.restaurant.di.Inject;
 import com.restaurant.di.Injectable;

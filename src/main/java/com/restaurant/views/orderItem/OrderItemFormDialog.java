@@ -9,12 +9,13 @@ import com.restaurant.dtos.orderItem.UpdateOrderItemDto;
 import com.restaurant.models.MenuItem;
 import com.restaurant.models.Order;
 import com.restaurant.models.OrderItem;
-import com.restaurant.utils.validators.OrderItemInputValidator;
+import com.restaurant.validators.Validator;
+import com.restaurant.validators.ValidatorFactory;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.util.List;
 import java.util.Objects;
 
 public class OrderItemFormDialog extends JDialog {
@@ -24,7 +25,6 @@ public class OrderItemFormDialog extends JDialog {
     private final JSpinner spQty = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
     private final JTextArea taNotes = new JTextArea(3, 20);
     private final JComboBox<OrderItemStatus> cbStatus = new JComboBox<>(OrderItemStatus.values());
-
     private final OrderItemController orderItemController;
 
     public OrderItemFormDialog(Frame owner, Order order, OrderItem existing, Runnable onSaved) {
@@ -32,14 +32,14 @@ public class OrderItemFormDialog extends JDialog {
         this.orderItemController = Injector.getInstance().getInstance(OrderItemController.class);
         MenuItemController menuItemController = Injector.getInstance().getInstance(MenuItemController.class);
 
-        List<MenuItem> list = menuItemController.findMenuItemsByRestaurantId(order.getRestaurant().getId());
-        for (MenuItem m : list) cbMenuItem.addItem(m);
-
+        for (MenuItem m : menuItemController.findMenuItemsByRestaurantId(order.getRestaurant().getId())) {
+            cbMenuItem.addItem(m);
+        }
         cbMenuItem.setRenderer(new DefaultListCellRenderer() {
             @Override
-            public Component getListCellRendererComponent(JList<?> l, Object v, int i, boolean s, boolean f) {
-                super.getListCellRendererComponent(l, v, i, s, f);
-                if (v instanceof MenuItem m) setText(m.getName());
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean selected, boolean focused) {
+                super.getListCellRendererComponent(list, value, index, selected, focused);
+                if (value instanceof MenuItem m) setText(m.getName());
                 return this;
             }
         });
@@ -47,26 +47,18 @@ public class OrderItemFormDialog extends JDialog {
         ChangeListener updatePrice = e -> {
             MenuItem m = (MenuItem) cbMenuItem.getSelectedItem();
             int qty = (int) spQty.getValue();
-            if (m != null) {
-                lblPrice.setText(String.format("$%.2f", m.getPrice() * qty));
-            } else {
-                lblPrice.setText("");
-            }
+            lblPrice.setText(m != null ? String.format("$%.2f", m.getPrice() * qty) : "");
         };
-
         cbMenuItem.addActionListener(e -> {
             MenuItem m = (MenuItem) cbMenuItem.getSelectedItem();
             taDescription.setText(m != null ? m.getDescription() : "");
             updatePrice.stateChanged(null);
         });
-
         spQty.addChangeListener(updatePrice);
-
-        if (existing == null && cbMenuItem.getItemCount() > 0) {
-            cbMenuItem.setSelectedIndex(0);
-        }
+        if (existing == null && cbMenuItem.getItemCount() > 0) cbMenuItem.setSelectedIndex(0);
 
         JPanel form = new JPanel(new GridLayout(0, 2, 5, 5));
+        form.setBorder(new EmptyBorder(10, 10, 10, 10));
         form.add(new JLabel("Menu Item:"));
         form.add(cbMenuItem);
         form.add(new JLabel("Price:"));
@@ -82,8 +74,8 @@ public class OrderItemFormDialog extends JDialog {
 
         JPanel buttons = new JPanel();
         JButton btnSave = new JButton("Save");
-        buttons.add(btnSave);
         JButton btnCancel = new JButton("Cancel");
+        buttons.add(btnSave);
         buttons.add(btnCancel);
 
         getContentPane().add(form, BorderLayout.CENTER);
@@ -100,39 +92,42 @@ public class OrderItemFormDialog extends JDialog {
             cbStatus.setSelectedIndex(0);
             cbStatus.setEnabled(false);
         }
-
         updatePrice.stateChanged(null);
 
         btnSave.addActionListener(e -> {
             MenuItem m = (MenuItem) cbMenuItem.getSelectedItem();
             int qty = (int) spQty.getValue();
             String notes = taNotes.getText().trim();
-            OrderItemStatus status = (OrderItemStatus) cbStatus.getSelectedItem();
-            var errors = OrderItemInputValidator.validate(m, qty);
-            if (!errors.isEmpty()) {
-                JOptionPane.showMessageDialog(this, String.join("\n", errors), "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
             if (existing == null) {
                 CreateOrderItemDto cd = new CreateOrderItemDto();
                 cd.setOrderId(order.getId());
                 cd.setMenuItemId(Objects.requireNonNull(m).getId());
                 cd.setQuantity(qty);
                 cd.setCustomization(notes);
+
+                Validator<CreateOrderItemDto, UpdateOrderItemDto> v =
+                        ValidatorFactory.getCreateValidator(CreateOrderItemDto.class);
+                if (!v.triggerCreateErrors(cd)) return;
+
                 orderItemController.createOrderItem(cd);
             } else {
                 UpdateOrderItemDto ud = new UpdateOrderItemDto();
                 ud.setId(existing.getId());
+                ud.setOrderId(order.getId());
                 ud.setMenuItemId(Objects.requireNonNull(m).getId());
                 ud.setQuantity(qty);
                 ud.setCustomization(notes);
-                ud.setStatus(status);
+                ud.setStatus((OrderItemStatus) cbStatus.getSelectedItem());
+
+                Validator<CreateOrderItemDto, UpdateOrderItemDto> v =
+                        ValidatorFactory.getUpdateValidator(UpdateOrderItemDto.class);
+                if (!v.triggerUpdateErrors(ud)) return;
+
                 orderItemController.updateOrderItem(ud);
             }
             onSaved.run();
             dispose();
         });
-
         btnCancel.addActionListener(e -> dispose());
     }
 }
