@@ -9,6 +9,7 @@ import com.restaurant.dtos.menuItem.GetMenuItemsDto;
 import com.restaurant.models.Menu;
 import com.restaurant.models.MenuItem;
 import com.restaurant.models.Restaurant;
+import com.restaurant.views.LoadableView;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -22,7 +23,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class MenuItemListView extends JPanel {
+public class MenuItemListView extends JPanel implements LoadableView {
     private static final String[] COLUMNS = {
             "ID", "Name", "Menu", "Restaurant", "Price", "Ordered"
     };
@@ -263,6 +264,7 @@ public class MenuItemListView extends JPanel {
         sortDir = "desc";
     }
 
+    @Override
     public void loadData() {
         model.setRowCount(0);
         List<MenuItem> list = menuItemController.findMenuItems(currentDto);

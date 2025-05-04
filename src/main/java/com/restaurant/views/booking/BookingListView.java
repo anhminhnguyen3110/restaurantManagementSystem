@@ -6,6 +6,7 @@ import com.restaurant.controllers.BookingController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.booking.GetBookingsDto;
 import com.restaurant.models.Booking;
+import com.restaurant.views.LoadableView;
 import org.jdesktop.swingx.JXDatePicker;
 
 import javax.swing.*;
@@ -20,7 +21,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class BookingListView extends JPanel {
+public class BookingListView extends JPanel implements LoadableView {
     private static final String[] COLUMNS = {
             "ID", "Customer", "Phone", "Restaurant", "Table", "#Seats", "Date", "Start", "End", "Status"
     };
@@ -311,6 +312,7 @@ public class BookingListView extends JPanel {
         dlg.setVisible(true);
     }
 
+    @Override
     public void loadData() {
         model.setRowCount(0);
         List<Booking> page = bookingController.findBookings(currentDto);

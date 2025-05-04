@@ -8,6 +8,7 @@ import com.restaurant.di.Injector;
 import com.restaurant.dtos.order.GetOrderDto;
 import com.restaurant.models.Order;
 import com.restaurant.models.Restaurant;
+import com.restaurant.views.LoadableView;
 import org.jdesktop.swingx.JXDatePicker;
 
 import javax.swing.*;
@@ -19,7 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 
-public class OrderListView extends JPanel {
+public class OrderListView extends JPanel implements LoadableView {
     private static final String[] COLUMNS = {
             "ID", "Restaurant", "Table", "Type", "Status", "Total Price", "Created"
     };
@@ -159,6 +160,7 @@ public class OrderListView extends JPanel {
         currentDto.setSortDir("desc");
     }
 
+    @Override
     public void loadData() {
         model.setRowCount(0);
         DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd MMM yyyy");

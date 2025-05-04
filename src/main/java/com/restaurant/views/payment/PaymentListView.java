@@ -6,6 +6,7 @@ import com.restaurant.controllers.PaymentController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.payment.GetPaymentDto;
 import com.restaurant.models.Payment;
+import com.restaurant.views.LoadableView;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -15,7 +16,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
-public class PaymentListView extends JPanel {
+public class PaymentListView extends JPanel implements LoadableView {
     private final PaymentController paymentController;
     private final GetPaymentDto dto = new GetPaymentDto();
     private final DefaultTableModel model;
@@ -137,6 +138,7 @@ public class PaymentListView extends JPanel {
         loadData();
     }
 
+    @Override
     public void loadData() {
         model.setRowCount(0);
         List<Payment> list = paymentController.findPayments(dto);

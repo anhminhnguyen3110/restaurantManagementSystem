@@ -6,6 +6,7 @@ import com.restaurant.controllers.ShipmentController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.shipment.GetShipmentDto;
 import com.restaurant.models.Shipment;
+import com.restaurant.views.LoadableView;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -17,7 +18,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
-public class ShipmentListView extends JPanel {
+public class ShipmentListView extends JPanel implements LoadableView {
     private final ShipmentController shipmentController;
     private final GetShipmentDto dto = new GetShipmentDto();
     private final DefaultTableModel model;
@@ -187,6 +188,7 @@ public class ShipmentListView extends JPanel {
         dto.setPage(0);
     }
 
+    @Override
     public void loadData() {
         model.setRowCount(0);
         currentShipments = shipmentController.findShipments(dto);

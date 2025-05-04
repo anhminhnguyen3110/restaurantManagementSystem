@@ -6,6 +6,7 @@ import com.restaurant.controllers.RestaurantController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.orderItem.GetOrderItemDto;
 import com.restaurant.models.*;
+import com.restaurant.views.LoadableView;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -16,7 +17,7 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.util.List;
 
-public class OrderItemListView extends JPanel {
+public class OrderItemListView extends JPanel implements LoadableView {
     private final Order order;
     private final Runnable onUpdated;
     private final OrderItemController orderItemController;
@@ -178,6 +179,7 @@ public class OrderItemListView extends JPanel {
         dto.setPage(0);
     }
 
+    @Override
     public void loadData() {
         dto.setOrderId(order != null ? order.getId() : 0);
         List<OrderItem> items = orderItemController.findOrderItems(dto);

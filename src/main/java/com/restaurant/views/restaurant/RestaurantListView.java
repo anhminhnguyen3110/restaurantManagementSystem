@@ -5,6 +5,7 @@ import com.restaurant.controllers.RestaurantController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.restaurant.GetRestaurantDto;
 import com.restaurant.models.Restaurant;
+import com.restaurant.views.LoadableView;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -14,7 +15,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
-public class RestaurantListView extends JPanel {
+public class RestaurantListView extends JPanel implements LoadableView {
     private static final String[] COLUMNS = {
             "ID", "Name", "Address", "Status", "Width", "Height"
     };
@@ -147,6 +148,7 @@ public class RestaurantListView extends JPanel {
         currentDto.setPage(0);
     }
 
+    @Override
     public void loadData() {
         model.setRowCount(0);
         List<Restaurant> list = controller.findRestaurants(currentDto);

@@ -5,6 +5,7 @@ import com.restaurant.controllers.UserController;
 import com.restaurant.di.Injector;
 import com.restaurant.dtos.user.GetUserDto;
 import com.restaurant.models.User;
+import com.restaurant.views.LoadableView;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -17,7 +18,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
-public class UserListView extends JPanel {
+public class UserListView extends JPanel implements LoadableView {
     private static final String[] COLUMNS = {"ID", "Username", "Name", "Email", "Role", "Active"};
     private final UserController userController;
     private final JTable table;
@@ -137,6 +138,7 @@ public class UserListView extends JPanel {
         currentDto.setPage(0);
     }
 
+    @Override
     public void loadData() {
         model.setRowCount(0);
         List<User> list = userController.findUsers(currentDto);

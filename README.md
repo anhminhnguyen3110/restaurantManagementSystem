@@ -65,7 +65,8 @@ java -jar target/*.jar
 ---
 
 ## Architecture: MVC
-
+### Detailed Class Diagram for User Model
+![](UML%20diagram/diagram.jpg)
 The application is organized into three primary layers:
 
 1. **Model** (`com.restaurant.models`)

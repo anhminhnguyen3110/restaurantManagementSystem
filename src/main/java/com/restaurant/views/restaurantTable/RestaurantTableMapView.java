@@ -8,6 +8,7 @@ import com.restaurant.dtos.restaurantTable.GetRestaurantTableDto;
 import com.restaurant.dtos.restaurantTable.GetRestaurantTableForBookingDto;
 import com.restaurant.models.Restaurant;
 import com.restaurant.models.RestaurantTable;
+import com.restaurant.views.LoadableView;
 import org.jdesktop.swingx.JXDatePicker;
 
 import javax.swing.*;
@@ -20,7 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class RestaurantTableMapView extends JPanel {
+public class RestaurantTableMapView extends JPanel implements LoadableView {
     private final RestaurantTableController tableController;
     private final JComboBox<Restaurant> cmbRestaurant = new JComboBox<>();
     private final JXDatePicker datePicker = new JXDatePicker();
@@ -86,6 +87,7 @@ public class RestaurantTableMapView extends JPanel {
         });
     }
 
+    @Override
     public void loadData() {
         Restaurant r = (Restaurant) cmbRestaurant.getSelectedItem();
         if (r == null) {

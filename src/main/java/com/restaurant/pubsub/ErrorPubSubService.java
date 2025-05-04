@@ -18,7 +18,6 @@ public class ErrorPubSubService implements PubSubService {
 
     public static ErrorPubSubService getInstance() {
         if (instance == null) {
-            System.out.println("ErrorPubSubService.getInstance()");
             instance = new ErrorPubSubService();
         }
         return instance;
